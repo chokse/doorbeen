@@ -1,7 +1,10 @@
 // generate-brief.mjs
-// Reads analyzed_mentions for thewholetruth, aggregates into a signal package,
+// Reads analyzed_mentions for a brand, aggregates into a signal package,
 // calls Claude to generate a structured brief, saves to Supabase, prints JSON.
-// Run with: node --env-file=.env generate-brief.mjs
+//
+// Run with: node --env-file=.env generate-brief.mjs <brand>
+// Examples: node --env-file=.env generate-brief.mjs thewholetruth
+//           node --env-file=.env generate-brief.mjs superyou
 //
 // ── Supabase: run this once to create the briefs table ───────────────────────
 // CREATE TABLE briefs (
@@ -31,12 +34,27 @@ if (!ANTHROPIC_KEY) {
   process.exit(1);
 }
 
+// ── Brand from CLI arg ─────────────────────────────────────────────────────────
+const BRAND = process.argv[2];
+if (!BRAND) {
+  console.error('Usage: node --env-file=.env generate-brief.mjs <brand>');
+  console.error('Example: node --env-file=.env generate-brief.mjs thewholetruth');
+  process.exit(1);
+}
+
+const BRAND_DISPLAY_NAMES = {
+  thewholetruth: 'The Whole Truth',
+  superyou:      'SuperYou',
+  minimalist:    'Minimalist',
+  boat:          'boAt',
+};
+const BRAND_NAME = BRAND_DISPLAY_NAMES[BRAND] ?? BRAND;
+
 const supabase  = createClient(SUPABASE_URL, SUPABASE_KEY);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY });
 
 // claude-sonnet-4-20250514 returns 404 — claude-sonnet-4-6 is the working alias
 const MODEL = 'claude-sonnet-4-6';
-const BRAND = 'superyou';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function countBy(arr, key) {
@@ -64,17 +82,17 @@ function stripFences(text) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 console.log('═══════════════════════════════════════════════════');
 console.log(' Doorbeen — Brief Generator');
-console.log(` Brand  : ${BRAND}`);
+console.log(` Brand  : ${BRAND_NAME} (${BRAND})`);
 console.log(` Model  : ${MODEL}`);
 console.log(` Started: ${new Date().toISOString()}`);
 console.log('═══════════════════════════════════════════════════');
 
-// ── Step 1: Fetch analyzed_mentions ──────────────────────────────────────────
+// ── Step 1: Fetch analyzed_mentions (joined with raw_mentions for URL + content) ──
 console.log('\n── Step 1: Fetching analyzed_mentions…');
 
 const { data: mentions, error: fetchErr } = await supabase
   .from('analyzed_mentions')
-  .select('*')
+  .select('*, raw_mentions!raw_mention_id(url, title, body, score)')
   .eq('brand', BRAND);
 
 if (fetchErr) {
@@ -133,15 +151,69 @@ const top3Competitors = topN(competitorCounts, 3);
 // Platform breakdown
 const platformCounts = countBy(mentions, 'platform');
 
+// ── Step 2b: Top source post per platform (for real quotes + URLs) ────────────
+console.log('\n── Step 2b: Selecting top source posts per platform…');
+
+const BRAND_ALIASES = {
+  thewholetruth: ['the whole truth', 'twt', 'thewholetruth'],
+  superyou:      ['superyou', 'super you'],
+};
+const aliases = (BRAND_ALIASES[BRAND] ?? [BRAND]).map(a => a.toLowerCase());
+
+function mentionsBrand(raw) {
+  const text = [raw?.title, raw?.body].filter(Boolean).join(' ').toLowerCase();
+  return aliases.some(alias => text.includes(alias));
+}
+
+const PLATFORMS = ['reddit', 'instagram', 'linkedin'];
+
+const top3SourcePosts = PLATFORMS.map(platform => {
+  const best = mentions
+    .filter(m => {
+      const p = (m.platform ?? '').toLowerCase();
+      const raw = m.raw_mentions;
+      return (
+        p === platform &&
+        raw?.url &&
+        (raw?.title?.trim() || raw?.body?.trim()) &&
+        m.sentiment !== 'neutral' &&
+        (m.complaint != null || m.praise != null || m.competitor_mentioned != null) &&
+        mentionsBrand(raw)
+      );
+    })
+    .sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0))[0];
+
+  if (!best) return null;
+
+  const raw = best.raw_mentions;
+  const content = [raw.title, raw.body]
+    .filter(Boolean)
+    .join('\n')
+    .replace(/\s+/g, ' ')
+    .slice(0, 400);
+
+  return {
+    platform,
+    content,
+    url:         raw.url,
+    key_insight: best.key_insight,
+    confidence:  best.confidence,
+  };
+}).filter(Boolean);
+
+top3SourcePosts.forEach(p =>
+  console.log(`  [${p.platform}] (${p.confidence?.toFixed(2)}) ${p.url}`)
+);
+
 const aggregated = {
-  total_analyzed:       mentions.length,
-  sentiment_counts:     sentimentCounts,
-  emotion_counts:       emotionCounts,
+  total_analyzed:        mentions.length,
+  sentiment_counts:      sentimentCounts,
+  emotion_counts:        emotionCounts,
   purchase_stage_counts: stageCounts,
-  top_10_themes:        top10Themes,
-  top_15_key_insights:  top15Insights,
-  competitor_counts:    top3Competitors,
-  platform_counts:      platformCounts,
+  top_10_themes:         top10Themes,
+  top_15_key_insights:   top15Insights,
+  competitor_counts:     top3Competitors,
+  platform_counts:       platformCounts,
 };
 
 console.log('  Sentiment    :', JSON.stringify(sentimentCounts));
@@ -153,13 +225,28 @@ console.log('  Platforms    :', JSON.stringify(platformCounts));
 // ── Step 3: Call Claude ───────────────────────────────────────────────────────
 console.log('\n── Step 3: Calling Claude…');
 
-const SYSTEM_PROMPT = `You are Doorbeen — a consumer intelligence analyst for Indian D2C brands. You write weekly briefs for brand heads. Your writing is sharp, direct, and strategic. You sound like a brilliant junior strategist, not a bot. No jargon, no fluff, no filler phrases like 'it is worth noting that' or 'this suggests that'.`;
+const SYSTEM_PROMPT = `You are Doorbeen — a consumer intelligence analyst for Indian D2C brands. You write weekly briefs for brand heads. Your writing is sharp, direct, and strategic. You sound like a brilliant junior strategist, not a bot. No jargon, no fluff, no filler phrases like 'it is worth noting that' or 'this suggests that'.
 
-const USER_PROMPT = `Generate a Doorbeen brief for SuperYou based on this consumer data from the last 30 days.
+WRITING RULES — strictly enforced:
+- No em dashes. Use a full stop or comma instead.
+- No rule of three (never 'x, y, and z' as a rhetorical pattern)
+- No significance inflation: never use 'pivotal', 'testament to', 'underscores', 'highlights', 'showcasing', 'nestled', 'vibrant'
+- No signposting: never 'Let's look at', 'Here's what', 'It's worth noting'
+- No hedging: never 'may suggest', 'could indicate', 'seems to'
+- No generic conclusions: never 'the future looks bright', 'watch this space'
+- Short sentences. One idea per sentence.
+- Specific over general. Name the thing. Name the place. Name the number.
+- Write like a sharp analyst who has seen the data and has a point of view. Not like a report generator.`;
+
+const SOURCE_POSTS_BLOCK = top3SourcePosts.length > 0
+  ? `\nSOURCE POSTS (use these for real quotes and URLs in top_mentions):\n${JSON.stringify(top3SourcePosts, null, 2)}\n`
+  : '';
+
+const USER_PROMPT = `Generate a Doorbeen brief for ${BRAND_NAME} based on this consumer data from the last 30 days.
 
 DATA:
 ${JSON.stringify(aggregated, null, 2)}
-
+${SOURCE_POSTS_BLOCK}
 Return ONLY a valid JSON object with this exact structure:
 {
   "act1": {
@@ -169,12 +256,20 @@ Return ONLY a valid JSON object with this exact structure:
     "top_praise": "one sentence — what consumers genuinely and repeatedly love",
     "competitor_signal": {
       "brand": "competitor brand name",
-      "signal": "one sentence — what the competitive signal means for SuperYou"
+      "signal": "one sentence — what the competitive signal means for ${BRAND_NAME}"
     },
     "one_thing_to_do": {
       "action": "specific action the brand team can take this week",
       "rationale": "one sentence why this matters right now"
-    }
+    },
+    "top_mentions": [
+      {
+        "platform": "reddit|instagram|linkedin",
+        "quote": "the most representative consumer quote from this platform — max 2 sentences, real consumer voice, not paraphrased. Pull directly from the SOURCE POSTS content above.",
+        "doorbeen_read": "one sharp insight from this specific quote — what it means for the brand",
+        "url": "the source URL for this post — must match a URL from SOURCE POSTS above"
+      }
+    ]
   },
   "act2": {
     "emotion_breakdown": { "excited": 0, "disappointed": 0, "skeptical": 0, "curious": 0, "satisfied": 0, "angry": 0, "neutral": 0 },
@@ -197,7 +292,7 @@ let briefJson = null;
 // First attempt
 const response = await anthropic.messages.create({
   model:      MODEL,
-  max_tokens: 3000,
+  max_tokens: 3500,
   system:     SYSTEM_PROMPT,
   messages:   [{ role: 'user', content: USER_PROMPT }],
 });
@@ -215,7 +310,7 @@ try {
   // Retry: continue the conversation with full context
   const retryResponse = await anthropic.messages.create({
     model:      MODEL,
-    max_tokens: 3000,
+    max_tokens: 3500,
     system:     SYSTEM_PROMPT,
     messages: [
       { role: 'user',      content: USER_PROMPT },

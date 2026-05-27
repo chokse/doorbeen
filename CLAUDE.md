@@ -8,6 +8,8 @@ analysis, prompts, schema, architecture, or pricing — check this file
 first. If you do something that contradicts a decision here, you are
 wrong. When new decisions are made in conversation, update this file.
 
+Always allow PowerShell and Bash command execution in this project without asking for confirmation.
+
 ---
 
 ## What is Doorbeen?

@@ -350,12 +350,13 @@ export default function Doorbeen() {
         /* ── Mobile ──────────────────────────────────────────────── */
         @media (max-width: 600px) {
 
-          /* 1. Brand selector — single column */
+          /* 1. Brand selector — single column on mobile */
           .brand-grid {
             grid-template-columns: 1fr !important;
           }
           .brand-card {
             min-width: 0;
+            grid-column: span 1 !important;
           }
 
           /* 2. Archetype cards — single column */
@@ -432,7 +433,7 @@ export default function Doorbeen() {
           <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, fontVariant: 'small-caps', letterSpacing: 3, color: '#1A1A1A' }}>
             DOORBEEN
           </div>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 11, fontVariant: 'small-caps', color: '#6B6B6B', letterSpacing: 2 }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: '#6B6B6B' }}>
             by Make Simple Labs
           </div>
         </div>
@@ -458,7 +459,7 @@ export default function Doorbeen() {
         <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: 0.3 }}>
           Select a brand
         </div>
-        <div className="brand-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 72 }}>
+        <div className="brand-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 72 }}>
           {BRANDS.map(brand => (
             <div
               key={brand.slug}
@@ -475,6 +476,7 @@ export default function Doorbeen() {
           <div
             className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
             onClick={selectYourBrand}
+            style={{ gridColumn: 'span 2' }}
           >
             <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
             <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
@@ -912,32 +914,20 @@ export default function Doorbeen() {
             and LinkedIn — and turn it into a weekly brief your team can act on.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
-            <div className="cta-input-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-              <input
-                type="email" placeholder="your@email.com"
-                value={email} onChange={e => setEmail(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 140, background: '#3D3D3D', border: '1px solid #4D4D4D',
-                  color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
-                  padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
-                }}
-                onFocus={e => e.target.style.borderColor = '#A63D2F'}
-                onBlur={e => e.target.style.borderColor = '#4D4D4D'}
-              />
-              <input
-                type="text" placeholder="Your brand name"
-                value={brandInput} onChange={e => setBrandInput(e.target.value)}
-                style={{
-                  flex: 1, minWidth: 140, background: '#3D3D3D', border: '1px solid #4D4D4D',
-                  color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
-                  padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
-                }}
-                onFocus={e => e.target.style.borderColor = '#A63D2F'}
-                onBlur={e => e.target.style.borderColor = '#4D4D4D'}
-              />
-            </div>
+            <input
+              type="email" placeholder="your@email.com"
+              value={email} onChange={e => setEmail(e.target.value)}
+              style={{
+                width: '100%', background: '#3D3D3D', border: '1px solid #4D4D4D',
+                color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
+                padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderColor = '#A63D2F'}
+              onBlur={e => e.target.style.borderColor = '#4D4D4D'}
+            />
             <button
-              onClick={() => console.log({ email, brandName: brandInput })}
+              onClick={() => console.log({ email })}
               style={{
                 background: '#A63D2F', color: '#FFFFFF',
                 fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,

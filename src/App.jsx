@@ -318,11 +318,15 @@ export default function Doorbeen() {
           background: #FDFAF7;
           border: 1px solid #E8E2DA;
           border-radius: 12px;
-          padding: 24px 32px;
-          min-width: 200px;
+          padding: 20px 24px;
+          min-height: 64px;
+          min-width: 0;
           cursor: pointer;
           transition: border-color 0.2s, background 0.2s;
           user-select: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .brand-card:hover { border-color: #A63D2F; }
         .brand-card.selected { background: #1A1A1A; border: 2px solid #1A1A1A; }
@@ -335,6 +339,7 @@ export default function Doorbeen() {
           border-style: dashed;
           border-color: var(--accent-warm);
         }
+        .brand-card.your-brand:hover .your-brand-label { color: #1A1A1A; }
         .brand-card.your-brand.selected {
           border-style: dashed;
           border-color: var(--accent-warm);
@@ -489,44 +494,46 @@ export default function Doorbeen() {
                 className={`brand-card${selectedBrand?.slug === brand.slug ? ' selected' : ''}`}
                 onClick={() => selectBrand(brand)}
               >
-                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: selectedBrand?.slug === brand.slug ? '#fff' : '#1A1A1A' }}>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: selectedBrand?.slug === brand.slug ? '#fff' : '#1A1A1A', textAlign: 'center' }}>
                   {brand.name}
                 </div>
               </div>
             ))}
 
             {/* ── YOUR BRAND — 5th card, centered under 2×2 ─────────── */}
-            <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center' }}>
-              <div
-                className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
-                onClick={selectYourBrand}
-                style={{ width: '100%', maxWidth: 'calc(50% - 6px)' }}
-              >
-                <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
-                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
-                  Your Brand
-                </div>
+            <div
+              className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
+              onClick={selectYourBrand}
+              style={{ gridColumn: 'span 2', maxWidth: '50%', margin: '0 auto', width: '100%' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span>🔭</span>
+                <span className="your-brand-label" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#6B6B6B' }}>
+                  your brand
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Generate Brief button — appears after selecting a brand, before brief loads */}
-          {selectedBrand && !briefTriggered && (
+          {/* Generate Brief button — shows before click and cycles steps during loading */}
+          {selectedBrand && (!briefTriggered || loading) && (
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
               <button
-                onClick={generateBrief}
+                onClick={loading ? undefined : generateBrief}
+                disabled={loading}
                 style={{
                   background: '#1A1A1A', color: '#fff',
                   fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
                   borderRadius: 8, padding: '16px 40px',
-                  border: 'none', cursor: 'pointer',
+                  border: 'none', cursor: loading ? 'default' : 'pointer',
                   width: '100%', maxWidth: 300,
                   transition: 'background 0.2s',
+                  opacity: loading ? 0.85 : 1,
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#333'}
-                onMouseLeave={e => e.currentTarget.style.background = '#1A1A1A'}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#333'; }}
+                onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#1A1A1A'; }}
               >
-                Generate Brief →
+                {loading && loadingStep >= 0 ? LOADING_STEPS[loadingStep] : 'Generate Brief →'}
               </button>
             </div>
           )}
@@ -594,30 +601,10 @@ export default function Doorbeen() {
       )}
 
       {/* ── BRIEF ─────────────────────────────────────────────────────── */}
-      {selectedBrand && briefTriggered && (
+      {selectedBrand && briefTriggered && !loading && (
         <div ref={briefRef} className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
 
-          {/* Change 3: animated loading steps */}
-          {loading && (
-            <div style={{ padding: '56px 0', textAlign: 'center' }}>
-              <p className="loading-step-text" style={{
-                fontFamily: 'Poppins, sans-serif', fontSize: 14, color: '#6B6B6B',
-                margin: '0 0 24px', minHeight: 22,
-              }}>
-                {loadingStep >= 0 ? LOADING_STEPS[loadingStep] : ''}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 7 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{
-                    width: 7, height: 7, borderRadius: '50%', background: '#A63D2F',
-                    animation: `dotBounce 1.2s ${i * 0.18}s ease infinite`,
-                  }} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {!loading && !brief && (
+          {!brief && (
             <div className="card">
               <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.85, margin: 0 }}>
                 Brief coming soon. We're collecting data for this brand.
@@ -625,7 +612,7 @@ export default function Doorbeen() {
             </div>
           )}
 
-          {!loading && brief && (
+          {brief && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
               {/* META ROW */}

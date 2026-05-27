@@ -113,6 +113,7 @@ export default function Doorbeen() {
   const [scrolled,        setScrolled]        = useState(false);
   const [email,           setEmail]           = useState('');
   const [brandInput,      setBrandInput]      = useState('');
+  const [briefTriggered,  setBriefTriggered]  = useState(false);
   const [showYourBrand,  setShowYourBrand]  = useState(false);
   const [inlineEmail,    setInlineEmail]    = useState('');
   const [leadSubmitted,  setLeadSubmitted]  = useState(false);
@@ -136,10 +137,21 @@ export default function Doorbeen() {
     }
   }, [showAct2]);
 
-  // ── Change 3 + 4: selectBrand with animated loading + auto-scroll ──────────
-  const selectBrand = async (brand) => {
+  // Selecting a brand only highlights the card — brief loads on explicit button click
+  const selectBrand = (brand) => {
     setSelectedBrand(brand);
     setShowYourBrand(false);
+    setBrief(null);
+    setShowAct2(false);
+    setBarsReady(false);
+    setLoading(false);
+    setLoadingStep(-1);
+    setBriefTriggered(false);
+  };
+
+  // Triggered by "Generate Brief →" button
+  const generateBrief = async () => {
+    setBriefTriggered(true);
     setBrief(null);
     setShowAct2(false);
     setBarsReady(false);
@@ -150,7 +162,7 @@ export default function Doorbeen() {
     const fetchPromise = supabase
       .from('briefs')
       .select('brief_json, period_label')
-      .eq('brand', brand.slug)
+      .eq('brand', selectedBrand.slug)
       .order('generated_at', { ascending: false })
       .limit(1)
       .single();
@@ -169,7 +181,6 @@ export default function Doorbeen() {
     setLoading(false);
     setLoadingStep(-1);
 
-    // Change 4: auto-scroll to brief after animation
     setTimeout(() => briefRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
@@ -184,6 +195,7 @@ export default function Doorbeen() {
     setInlineEmail('');
     setLeadSubmitted(false);
     setLeadError(null);
+    setBriefTriggered(false);
   };
 
   const submitLead = async () => {
@@ -303,17 +315,17 @@ export default function Doorbeen() {
         .card:hover { border-color: var(--border-strong); }
 
         .brand-card {
-          background: var(--bg-card);
-          border: 1.5px solid var(--border);
+          background: #FDFAF7;
+          border: 1px solid #E8E2DA;
           border-radius: 12px;
           padding: 24px 32px;
           min-width: 200px;
           cursor: pointer;
-          transition: border-color 0.2s, transform 0.2s, background 0.2s;
+          transition: border-color 0.2s, background 0.2s;
           user-select: none;
         }
-        .brand-card:hover { border-color: var(--accent-warm); transform: translateY(-2px); }
-        .brand-card.selected { border-color: var(--accent-warm); background: rgba(166,61,47,0.04); }
+        .brand-card:hover { border-color: #A63D2F; }
+        .brand-card.selected { background: #1A1A1A; border: 2px solid #1A1A1A; }
 
         .brand-card.your-brand {
           border-style: dashed;
@@ -469,32 +481,55 @@ export default function Doorbeen() {
         <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: 0.3 }}>
           Select a brand
         </div>
-        <div className="brand-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 72 }}>
-          {BRANDS.map(brand => (
-            <div
-              key={brand.slug}
-              className={`brand-card${selectedBrand?.slug === brand.slug ? ' selected' : ''}`}
-              onClick={() => selectBrand(brand)}
-            >
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
-                {brand.name}
+        <div style={{ marginBottom: 72 }}>
+          <div className="brand-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {BRANDS.map(brand => (
+              <div
+                key={brand.slug}
+                className={`brand-card${selectedBrand?.slug === brand.slug ? ' selected' : ''}`}
+                onClick={() => selectBrand(brand)}
+              >
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: selectedBrand?.slug === brand.slug ? '#fff' : '#1A1A1A' }}>
+                  {brand.name}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {/* ── YOUR BRAND — 5th card, centered under 2×2 ─────────── */}
-          <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center' }}>
-            <div
-              className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
-              onClick={selectYourBrand}
-              style={{ width: '100%', maxWidth: 'calc(50% - 6px)' }}
-            >
-              <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
-                Your Brand
+            {/* ── YOUR BRAND — 5th card, centered under 2×2 ─────────── */}
+            <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center' }}>
+              <div
+                className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
+                onClick={selectYourBrand}
+                style={{ width: '100%', maxWidth: 'calc(50% - 6px)' }}
+              >
+                <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
+                  Your Brand
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Generate Brief button — appears after selecting a brand, before brief loads */}
+          {selectedBrand && !briefTriggered && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+              <button
+                onClick={generateBrief}
+                style={{
+                  background: '#1A1A1A', color: '#fff',
+                  fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
+                  borderRadius: 8, padding: '16px 40px',
+                  border: 'none', cursor: 'pointer',
+                  width: '100%', maxWidth: 300,
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#333'}
+                onMouseLeave={e => e.currentTarget.style.background = '#1A1A1A'}
+              >
+                Generate Brief →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -559,7 +594,7 @@ export default function Doorbeen() {
       )}
 
       {/* ── BRIEF ─────────────────────────────────────────────────────── */}
-      {selectedBrand && (
+      {selectedBrand && briefTriggered && (
         <div ref={briefRef} className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
 
           {/* Change 3: animated loading steps */}
@@ -832,7 +867,7 @@ export default function Doorbeen() {
                       Who's Talking About This Brand
                     </div>
                     <div className="archetype-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
-                      {act2.consumer_archetypes?.map((arch, i) => (
+                      {act2.consumer_archetypes?.slice(0, 3).map((arch, i) => (
                         <div key={i} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
                           <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>
                             {arch.name}

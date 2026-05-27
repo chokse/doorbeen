@@ -1,314 +1,841 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-const SAMPLE_BRIEFS = [
-  {
-    weekDate: "Week of May 19–25, 2026",
-    weekSummary: "A solid week for SuperYou — taste and convenience are doing the heavy lifting, with Blinkit driving most of the positive chatter. But a quieter undercurrent is worth watching: a small but vocal cohort is starting to scrutinise the ingredient list, and The Whole Truth keeps getting name-dropped as the benchmark for transparency. Nothing alarming yet. Worth watching.",
-    sentimentScore: 67,
-    sentimentLabel: "Cautiously Positive",
-    totalMentions: "340+",
-    topMentions: [
-      {
-        platform: "Reddit",
-        subreddit: "IndianFitness",
-        upvotes: 47,
-        quote: "Tried the SuperYou chocolate wafer from Blinkit yesterday — honestly surprised, doesn't taste like a protein product at all. Will definitely reorder.",
-        doorbin_read: "Taste is beating expectations — 'doesn't taste like protein' is exactly the conversion trigger SuperYou needs from first-timers."
-      },
-      {
-        platform: "Reddit",
-        subreddit: "india",
-        upvotes: 31,
-        quote: "₹100 for 40g is a lot yaar. The Whole Truth at least tells you every ingredient clearly. SuperYou feels more like a celebrity brand than a health brand to me.",
-        doorbin_read: "Price + transparency anxiety in one comment. This is the exact consumer SuperYou risks losing to TWF if ingredient communication doesn't sharpen."
-      },
-      {
-        platform: "Instagram",
-        subreddit: null,
-        upvotes: 0,
-        quote: "Protein cold foam at Starbucks with SuperYou?? Finally something that actually fits into my morning without feeling like a supplement.",
-        doorbin_read: "The Starbucks collab is converting habitual coffee drinkers — this is the 'seamless lifestyle fit' positioning working exactly as intended."
-      }
-    ],
-    consumerTension: {
-      headline: "Loved for taste, questioned for trust.",
-      body: "SuperYou has cracked the hardest thing in functional snacking — making protein feel indulgent. Consumers are genuinely delighted by the taste. But a second question is forming in a smaller, more influential cohort: 'But what's actually in it?' The Whole Truth has trained Indian consumers to expect radical transparency. SuperYou hasn't answered that question yet — and the longer it stays unanswered, the louder it will get."
-    },
-    competitorSignal: {
-      brand: "The Whole Truth",
-      signal: "TWF is being cited in multiple threads this week as the 'honest alternative' to celebrity protein brands. Their no-nonsense ingredient labelling is resonating with the ingredient-scrutiny crowd — the same cohort that's mildly sceptical about SuperYou's positioning."
-    },
-    oneThingToDo: {
-      action: "Publish one piece of content this week that shows exactly what fermented yeast protein is — not polished, not marketing, just honest. A 60-second factory or lab explainer from Nikunj (not Ranveer) would do it.",
-      rationale: "The ingredient curiosity wave is rising — answer it now on your own terms before a skeptical Reddit thread does it for you."
-    },
-    emergingTheme: "Searches around 'yeast protein side effects' and 'fermented yeast protein what is it' are growing — consumer education gap forming around SuperYou Pro."
-  },
-  {
-    weekDate: "Week of May 19–25, 2026",
-    weekSummary: "Mixed signals this week — the Starbucks collab is still generating warmth, but chips pricing got called out in two separate threads and the word 'overpriced' appeared 11 times across monitored sources. The taste story remains strong. The value story is the open wound.",
-    sentimentScore: 54,
-    sentimentLabel: "Mixed",
-    totalMentions: "280+",
-    topMentions: [
-      {
-        platform: "Reddit",
-        subreddit: "Fitness_India",
-        upvotes: 62,
-        quote: "SuperYou chips are genuinely good but ₹100 for a small packet is not a daily snack, it's an occasion snack. I'd switch from Lay's permanently if the price was within reach.",
-        doorbin_read: "This consumer wants to be a repeat buyer but the price is creating friction. They're stuck between aspiration and habit — classic accessible-premium trap."
-      },
-      {
-        platform: "Reddit",
-        subreddit: "IndianFitness",
-        upvotes: 28,
-        quote: "Ranveer's brand or not, the peanut butter wafer actually slaps. Had it post-workout, felt fine, didn't feel like I was eating cardboard protein stuff.",
-        doorbin_read: "Post-purchase advocacy from a skeptic — the product is converting doubters, which matters more than fan praise."
-      },
-      {
-        platform: "Instagram",
-        subreddit: null,
-        upvotes: 0,
-        quote: "Tried the Super Masala chips — the masala flavour is SO good but I kind of wish there was a ₹30 mini pack option for everyday snacking.",
-        doorbin_read: "Price point request with a ready solution: a ₹30 mini SKU could unlock daily purchase behaviour from consumers currently treating SuperYou as a treat."
-      }
-    ],
-    consumerTension: {
-      headline: "They want to say yes. The price says no.",
-      body: "SuperYou has successfully created desire. The product reviews are warm, the flavours are landing, and first-timers are pleasantly surprised. But there's a ceiling. At ₹100/pack, consumers are mentally categorising SuperYou as an 'occasion' brand — not a daily snack. The Whole Truth solved this with multipacks and subscriptions. SuperYou hasn't yet. The question isn't whether consumers like it. It's whether the price lets them love it consistently."
-    },
-    competitorSignal: {
-      brand: "Cosmix",
-      signal: "Cosmix is gaining ground in the 'clean nutrition' conversation on Instagram with women 25-35, positioning around adaptogen-protein blends. Not a direct category competitor yet, but they're building trust equity with the same audience SuperYou wants long-term."
-    },
-    oneThingToDo: {
-      action: "Test a ₹30–35 mini pack of the Super Masala chips on Blinkit for 2 weeks — price it as a daily snack, not a premium product.",
-      rationale: "Multiple independent consumers this week asked for a smaller, cheaper format. This is a product gap, not a marketing problem — and it's easy to test."
-    },
-    emergingTheme: "The phrase 'celebrity brand' vs 'real nutrition brand' is appearing as a framing in discussions — early signal that authenticity perception needs active management."
-  }
+// Requires VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+
+const BRANDS = [
+  { name: 'SuperYou',        slug: 'superyou'      },
+  { name: 'The Whole Truth', slug: 'thewholetruth' },
+  { name: 'Minimalist',      slug: 'minimalist'    },
+  { name: 'boAt',            slug: 'boat'          },
 ];
 
-function AnimatedBar({ score }) {
-  const color = score >= 65 ? "#4ade80" : score >= 45 ? "#facc15" : "#f87171";
+const EMOTION_COLORS = {
+  curious:      '#2E5F8A',
+  excited:      '#4A7C59',
+  skeptical:    '#C49A2B',
+  angry:        '#A63D2F',
+  disappointed: '#8B6F5E',
+  satisfied:    '#4A7C59',
+  neutral:      '#9B9B9B',
+};
+
+// ── Platform logos ────────────────────────────────────────────────────────
+const PLATFORM_LOGOS = {
+  Reddit:    'https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png',
+  Instagram: 'https://static.cdninstagram.com/rsrc.php/v3/yI/r/VsNE-OHk_8a.png',
+  LinkedIn:  'https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png',
+};
+
+function PlatformLogo({ platform }) {
+  const src = PLATFORM_LOGOS[platform];
+  if (!src) return null;
   return (
-    <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 99, height: 6, width: "100%", overflow: "hidden" }}>
+    <img src={src} width="20" height="20" alt={platform}
+      style={{ borderRadius: 4, flexShrink: 0, display: 'block' }} />
+  );
+}
+
+// ── Shared components ──────────────────────────────────────────────────────
+
+function AnimatedBar({ score }) {
+  const color = score >= 65 ? '#4A7C59' : score >= 45 ? '#C49A2B' : '#A63D2F';
+  return (
+    <div style={{ background: '#E8E2DA', borderRadius: 99, height: 5, width: '100%', overflow: 'hidden' }}>
       <div style={{
-        height: "100%", width: `${score}%`, background: color,
-        borderRadius: 99, boxShadow: `0 0 12px ${color}66`,
-        transition: "width 1.4s cubic-bezier(.4,0,.2,1)"
+        height: '100%', width: `${score}%`, background: color,
+        borderRadius: 99, transition: 'width 1.4s cubic-bezier(.4,0,.2,1)',
       }} />
     </div>
   );
 }
 
-function PlatformBadge({ platform }) {
-  const colors = {
-    Reddit: { bg: "#ff4500", text: "#fff" },
-    Instagram: { bg: "#e1306c", text: "#fff" },
-    Twitter: { bg: "#1da1f2", text: "#fff" },
-    News: { bg: "#6366f1", text: "#fff" },
-  };
-  const c = colors[platform] || { bg: "#334155", text: "#94a3b8" };
+function HorizBar({ label, value, total, color, animate }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
-    <span style={{
-      background: c.bg, color: c.text, fontSize: 10, fontWeight: 700,
-      padding: "2px 8px", borderRadius: 99, letterSpacing: 1, textTransform: "uppercase"
-    }}>{platform}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+      <div style={{
+        fontFamily: 'Poppins, sans-serif', fontSize: 13, color: '#1A1A1A',
+        width: 120, flexShrink: 0, textTransform: 'capitalize',
+      }}>
+        {label}
+      </div>
+      <div style={{ flex: 1, background: '#E8E2DA', borderRadius: 99, height: 7, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: animate ? `${pct}%` : '0%',
+          background: color, borderRadius: 99,
+          transition: 'width 0.8s ease',
+        }} />
+      </div>
+      <div style={{
+        fontFamily: 'Poppins, sans-serif', fontSize: 12, color: '#9B9B9B',
+        width: 32, textAlign: 'right', flexShrink: 0,
+      }}>
+        {pct}%
+      </div>
+    </div>
   );
 }
 
-export default function DoorbinPOC() {
-  const [brief, setBrief] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(0);
-  const [generated, setGenerated] = useState(false);
+// ── Main component ─────────────────────────────────────────────────────────
 
-  const steps = [
-    "Scanning Reddit threads...",
-    "Pulling Instagram signals...",
-    "Cross-referencing competitor mentions...",
-    "Running sentiment analysis...",
-    "Drawing conclusions...",
-  ];
+export default function Doorbeen() {
+  const [selectedBrand,   setSelectedBrand]   = useState(null);
+  const [brief,           setBrief]           = useState(null);
+  const [periodLabel,     setPeriodLabel]     = useState('Last 30 days');
+  const [loading,         setLoading]         = useState(false);
+  const [showAct2,        setShowAct2]        = useState(false);
+  const [barsReady,       setBarsReady]       = useState(false);
+  const [scrolled,        setScrolled]        = useState(false);
+  const [email,           setEmail]           = useState('');
+  const [brandInput,      setBrandInput]      = useState('');
+  const [showYourBrand,  setShowYourBrand]  = useState(false);
+  const [inlineEmail,    setInlineEmail]    = useState('');
+  const [leadSubmitted,  setLeadSubmitted]  = useState(false);
+  const [leadError,      setLeadError]      = useState(null);
 
-  const generate = async () => {
-    setLoading(true);
-    setBrief(null);
-    setGenerated(false);
-    for (let i = 0; i < steps.length; i++) {
-      setStep(i);
-      await new Promise(r => setTimeout(r, 800));
+  const act2Ref = useRef(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (showAct2) {
+      setTimeout(() => setBarsReady(true), 100);
+      setTimeout(() => act2Ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    } else {
+      setBarsReady(false);
     }
-    const picked = SAMPLE_BRIEFS[Math.floor(Math.random() * SAMPLE_BRIEFS.length)];
-    setBrief(picked);
-    setGenerated(true);
+  }, [showAct2]);
+
+  const selectBrand = async (brand) => {
+    setSelectedBrand(brand);
+    setShowYourBrand(false);
+    setBrief(null);
+    setShowAct2(false);
+    setBarsReady(false);
+    setLoading(true);
+
+    const { data } = await supabase
+      .from('briefs')
+      .select('brief_json, period_label')
+      .eq('brand', brand.slug)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    setBrief(data?.brief_json ?? null);
+    setPeriodLabel(data?.period_label ?? 'Last 30 days');
     setLoading(false);
   };
 
-  const scoreColor = brief
-    ? brief.sentimentScore >= 65 ? "#4ade80"
-      : brief.sentimentScore >= 45 ? "#facc15" : "#f87171"
-    : "#94a3b8";
+  const selectYourBrand = () => {
+    setShowYourBrand(true);
+    setSelectedBrand(null);
+    setBrief(null);
+    setLoading(false);
+    setShowAct2(false);
+    setBarsReady(false);
+    setInlineEmail('');
+    setLeadSubmitted(false);
+    setLeadError(null);
+  };
+
+  const submitLead = async () => {
+    const { error } = await supabase
+      .from('leads')
+      .insert({ email: inlineEmail, source: 'your_brand' });
+    if (error) {
+      setLeadError('Something went wrong. Email us at hello@makesimple.in');
+    } else {
+      setLeadSubmitted(true);
+    }
+  };
+
+  const act1 = brief?.act1;
+  const act2  = brief?.act2;
+
+  const mentions = brief ? [
+    { platform: 'Reddit',    quote: act1.top_tension,              annotation: act2?.top_insights?.[0] ?? null },
+    { platform: 'Instagram', quote: act1.top_praise,               annotation: act2?.top_insights?.[1] ?? null },
+    act1.competitor_signal?.signal
+      ? { platform: 'LinkedIn', quote: act1.competitor_signal.signal, annotation: act2?.top_insights?.[2] ?? null }
+      : null,
+  ].filter(Boolean) : [];
+
+  const emotionTotal = act2 ? Object.values(act2.emotion_breakdown).reduce((a, b) => a + b, 0) : 0;
+  const stageTotal   = act2 ? Object.values(act2.purchase_stage_distribution).reduce((a, b) => a + b, 0) : 0;
+
+  const sentimentLabel = act1
+    ? act1.sentiment_score >= 65 ? 'Positive'
+    : act1.sentiment_score >= 45 ? 'Mixed'
+    : 'Needs Attention'
+    : '';
+
+  const ds = act2?.data_sources;
 
   return (
-    <div style={{
-      minHeight: "100vh", background: "#080c14",
-      fontFamily: "Georgia, 'Times New Roman', serif",
-      color: "#e2e8f0", paddingBottom: 60,
-    }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text-primary)' }}>
+
+      {/* ── Global styles ─────────────────────────────────────────────── */}
       <style>{`
-        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        .card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:28px; transition: border-color 0.3s; }
-        .card:hover { border-color:rgba(99,102,241,0.3); }
-        .reveal { animation: fadeUp 0.5s ease forwards; }
+        :root {
+          --bg:            #F5F0EB;
+          --bg-card:       #FDFAF7;
+          --bg-dark:       #2C2C2C;
+          --text-primary:  #1A1A1A;
+          --text-secondary:#6B6B6B;
+          --text-muted:    #9B9B9B;
+          --accent-warm:   #A63D2F;
+          --border:        #E8E2DA;
+          --border-strong: #C8BFB5;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0);    }
+        }
+        .reveal   { animation: fadeUp 0.5s ease both; }
+        .reveal-1 { animation: fadeUp 0.5s 0.10s ease both; }
+        .reveal-2 { animation: fadeUp 0.5s 0.20s ease both; }
+        .reveal-3 { animation: fadeUp 0.5s 0.30s ease both; }
+        .reveal-4 { animation: fadeUp 0.5s 0.40s ease both; }
+        .reveal-5 { animation: fadeUp 0.5s 0.50s ease both; }
+
+        .card {
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          padding: 32px;
+          transition: border-color 0.2s;
+        }
+        .card:hover { border-color: var(--border-strong); }
+
+        .brand-card {
+          background: var(--bg-card);
+          border: 1.5px solid var(--border);
+          border-radius: 12px;
+          padding: 24px 32px;
+          min-width: 200px;
+          cursor: pointer;
+          transition: border-color 0.2s, transform 0.2s, background 0.2s;
+          user-select: none;
+        }
+        .brand-card:hover { border-color: var(--accent-warm); transform: translateY(-2px); }
+        .brand-card.selected { border-color: var(--accent-warm); background: rgba(166,61,47,0.04); }
+
+        .brand-card.your-brand {
+          border-style: dashed;
+          border-color: #C8BFB5;
+        }
+        .brand-card.your-brand:hover {
+          border-style: dashed;
+          border-color: var(--accent-warm);
+        }
+        .brand-card.your-brand.selected {
+          border-style: dashed;
+          border-color: var(--accent-warm);
+          background: rgba(166,61,47,0.04);
+        }
+
+        .insight-row {
+          display: flex;
+          gap: 16px;
+          padding: 14px 14px;
+          border-bottom: 1px solid var(--border);
+          border-left: 2px solid transparent;
+          transition: border-left-color 0.2s;
+        }
+        .insight-row:last-child { border-bottom: none; }
+        .insight-row:hover { border-left-color: var(--accent-warm); }
+        .insight-row:hover .insight-num { color: var(--accent-warm); }
+
+        .makesimple-strip span { transition: color 0.2s; }
+        .makesimple-strip:hover span { color: var(--accent-warm) !important; }
+
+        .inline-input:focus { outline: none; border-color: #A63D2F !important; }
+
+        /* ── Mobile ──────────────────────────────────────────────── */
+        @media (max-width: 600px) {
+
+          /* 1. Brand selector — single column */
+          .brand-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .brand-card {
+            min-width: 0;
+          }
+
+          /* 2. Archetype cards — single column */
+          .archetype-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          /* 3. Any explicit 2-column grid (competitor signal, future panels) */
+          .two-col-grid {
+            grid-template-columns: 1fr !important;
+          }
+
+          /* 4. Data sources row — stack label above platform chips */
+          .data-sources-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 8px !important;
+          }
+          .data-sources-row > span {
+            margin-right: 0 !important;
+            flex-shrink: 1 !important;
+          }
+          .data-sources-chips {
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+          }
+
+          /* 5. CTA inputs — full width, stacked */
+          .cta-input-row {
+            flex-direction: column !important;
+          }
+          .cta-input-row input {
+            min-width: 0 !important;
+            width: 100% !important;
+          }
+
+          /* 6. Page containers — 16px side padding */
+          .page-col {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+          .card {
+            padding: 20px !important;
+          }
+
+          /* 7. Topbar */
+          header {
+            padding: 14px 16px !important;
+          }
+
+          /* Misc: scale down hero headline */
+          .hero-headline {
+            font-size: 30px !important;
+          }
+          .cta-headline {
+            font-size: 28px !important;
+          }
+          .cta-section {
+            padding: 56px 16px !important;
+          }
+        }
       `}</style>
 
-      {/* Topbar */}
-      <div style={{
-        borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "18px 32px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "rgba(255,255,255,0.02)", position: "sticky", top: 0, zIndex: 100,
+      {/* ── TOPBAR ────────────────────────────────────────────────────── */}
+      <header style={{
+        background: 'var(--bg)', borderBottom: '1px solid var(--border)',
+        padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'sticky', top: 0, zIndex: 100,
+        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.06)' : 'none',
+        transition: 'box-shadow 0.3s',
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: 8,
-            background: "linear-gradient(135deg, #6366f1, #a855f7)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18,
-          }}>🔭</div>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: 2, color: "#f8fafc" }}>DOORBIN</div>
-            <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 2, textTransform: "uppercase", fontFamily: "monospace" }}>Consumer Intelligence</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, fontVariant: 'small-caps', letterSpacing: 2, color: '#1A1A1A' }}>
+            DOORBEEN
+          </div>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 11, fontVariant: 'small-caps', color: '#9B9B9B', letterSpacing: 1 }}>
+            by Makesimple Labs
           </div>
         </div>
-        <div style={{
-          fontSize: 11, color: "#475569", fontFamily: "monospace",
-          background: "rgba(255,255,255,0.03)", padding: "4px 12px",
-          borderRadius: 6, border: "1px solid rgba(255,255,255,0.06)"
-        }}>CLIENT: SUPERYOU · ADITI JAIN</div>
-      </div>
+      </header>
 
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "40px 24px 0" }}>
-
-        {/* Hero */}
-        <div style={{ marginBottom: 40 }}>
-          <div style={{ fontSize: 11, letterSpacing: 3, color: "#6366f1", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 12 }}>Weekly Intelligence Brief</div>
-          <h1 style={{ fontSize: 34, fontWeight: 400, lineHeight: 1.25, margin: 0, color: "#f8fafc", letterSpacing: -0.5 }}>
-            What India is saying<br />
-            <span style={{ color: "#6366f1", fontStyle: "italic" }}>about SuperYou.</span>
-          </h1>
-          <p style={{ color: "#64748b", marginTop: 14, fontSize: 14, lineHeight: 1.8, maxWidth: 520 }}>
-            Doorbin monitors Reddit, Instagram, and the open web — then draws the conclusions that matter for your brand decisions. Delivered every Monday morning.
-          </p>
+      {/* ── HERO ──────────────────────────────────────────────────────── */}
+      <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
+        <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 18 }}>
+          Weekly Consumer Intelligence
         </div>
+        <h1 className="hero-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 42, color: 'var(--text-primary)', lineHeight: 1.2, margin: '0 0 18px' }}>
+          What India is saying<br />about your brand.
+        </h1>
+        <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.85, maxWidth: 520, margin: '0 0 56px' }}>
+          Doorbeen monitors Reddit, Instagram, and LinkedIn — then draws the conclusions
+          that matter for your brand decisions.
+        </p>
 
-        {/* Button */}
-        {!generated && (
-          <button onClick={generate} disabled={loading} style={{
-            background: loading ? "rgba(99,102,241,0.25)" : "linear-gradient(135deg,#6366f1,#a855f7)",
-            color: "#fff", border: "none", borderRadius: 12, padding: "16px 36px",
-            fontSize: 15, fontWeight: 600, cursor: loading ? "default" : "pointer",
-            width: "100%", marginBottom: 24, letterSpacing: 0.5,
-            boxShadow: loading ? "none" : "0 0 40px rgba(99,102,241,0.25)",
-          }}>
-            {loading
-              ? <span style={{ animation: "pulse 1.2s infinite", display: "inline-block" }}>{steps[step]}</span>
-              : "Generate This Week's Brief →"}
-          </button>
-        )}
-
-        {/* Brief */}
-        {brief && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-
-            {/* Meta row */}
-            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <span style={{ fontSize: 11, fontFamily: "monospace", color: "#475569", letterSpacing: 2 }}>{brief.weekDate.toUpperCase()}</span>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#334155" }} />
-              <span style={{ fontSize: 11, fontFamily: "monospace", color: scoreColor, letterSpacing: 1 }}>{brief.sentimentLabel.toUpperCase()}</span>
-              <span style={{ width: 4, height: 4, borderRadius: "50%", background: "#334155" }} />
-              <span style={{ fontSize: 11, fontFamily: "monospace", color: "#475569" }}>{brief.totalMentions} MENTIONS TRACKED</span>
-            </div>
-
-            {/* Pulse */}
-            <div className="card reveal" style={{ borderLeft: `3px solid ${scoreColor}` }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, color: "#475569", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 14 }}>The Pulse</div>
-              <p style={{ fontSize: 15, lineHeight: 1.85, margin: "0 0 20px", color: "#cbd5e1", fontStyle: "italic" }}>
-                "{brief.weekSummary}"
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ flex: 1 }}><AnimatedBar score={brief.sentimentScore} /></div>
-                <div style={{ fontSize: 26, fontWeight: 300, color: scoreColor, fontFamily: "monospace", minWidth: 36 }}>{brief.sentimentScore}</div>
+        <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: 0.3 }}>
+          Select a brand
+        </div>
+        <div className="brand-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, marginBottom: 72 }}>
+          {BRANDS.map(brand => (
+            <div
+              key={brand.slug}
+              className={`brand-card${selectedBrand?.slug === brand.slug ? ' selected' : ''}`}
+              onClick={() => selectBrand(brand)}
+            >
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>
+                {brand.name}
               </div>
             </div>
+          ))}
 
-            {/* Mentions */}
-            <div className="card reveal" style={{ animationDelay: "0.1s" }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, color: "#475569", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 18 }}>What People Are Actually Saying</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                {brief.topMentions.map((m, i) => (
-                  <div key={i} style={{ borderTop: i > 0 ? "1px solid rgba(255,255,255,0.05)" : "none", paddingTop: i > 0 ? 20 : 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                      <PlatformBadge platform={m.platform} />
-                      {m.subreddit && <span style={{ fontSize: 11, color: "#64748b", fontFamily: "monospace" }}>r/{m.subreddit}</span>}
-                      {m.upvotes > 0 && <span style={{ fontSize: 11, color: "#475569", fontFamily: "monospace", marginLeft: "auto" }}>▲ {m.upvotes}</span>}
+          {/* ── YOUR BRAND — 5th card ──────────────────────────────── */}
+          <div
+            className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
+            onClick={selectYourBrand}
+          >
+            <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
+              Your Brand
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── YOUR BRAND INLINE FORM ────────────────────────────────────── */}
+      {showYourBrand && (
+        <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
+          <div style={{
+            maxWidth: 600, margin: '0 auto', padding: 40,
+            background: '#FDFAF7', border: '1px solid #E8E2DA',
+            borderRadius: 16, textAlign: 'center',
+          }}>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 11, fontVariant: 'small-caps', color: '#9B9B9B', letterSpacing: 2, marginBottom: 16 }}>
+              Get Doorbeen for your brand
+            </div>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: '#1A1A1A', marginBottom: 8 }}>
+              Your consumers are talking.
+            </div>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#6B6B6B', marginBottom: 32, lineHeight: 1.7 }}>
+              We monitor Reddit, Instagram, and LinkedIn — and turn what they're saying into a weekly brief your team can act on.
+            </div>
+
+            {leadSubmitted ? (
+              <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: 'var(--text-muted)', margin: 0 }}>
+                We'll be in touch within 48 hours.
+              </p>
+            ) : (
+              <>
+                <input
+                  className="inline-input"
+                  type="email"
+                  placeholder="your work email"
+                  value={inlineEmail}
+                  onChange={e => setInlineEmail(e.target.value)}
+                  style={{
+                    width: '100%', fontFamily: 'Poppins, sans-serif', fontSize: 14,
+                    padding: '14px 18px', border: '1px solid #E8E2DA', borderRadius: 8,
+                    marginBottom: 16, background: '#fff', color: '#1A1A1A', boxSizing: 'border-box',
+                    transition: 'border-color 0.2s',
+                  }}
+                />
+                <button
+                  onClick={submitLead}
+                  style={{
+                    width: '100%', fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
+                    padding: 16, background: '#A63D2F', color: '#fff', border: 'none',
+                    borderRadius: 8, cursor: 'pointer', transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
+                >
+                  Request a Brief →
+                </button>
+                {leadError && (
+                  <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#A63D2F', marginTop: 12, marginBottom: 0 }}>
+                    {leadError}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── BRIEF ─────────────────────────────────────────────────────── */}
+      {selectedBrand && (
+        <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
+
+          {loading && (
+            <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, color: 'var(--text-muted)', fontSize: 15, padding: '32px 0' }}>
+              Loading brief…
+            </p>
+          )}
+
+          {!loading && !brief && (
+            <div className="card">
+              <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.85, margin: 0 }}>
+                Brief coming soon. We're collecting data for this brand.
+              </p>
+            </div>
+          )}
+
+          {!loading && brief && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* META ROW */}
+              <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
+                  {periodLabel}
+                </span>
+                <span style={{ color: 'var(--border-strong)' }}>·</span>
+                <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                  {sentimentLabel}
+                </span>
+                {ds?.total > 0 && <>
+                  <span style={{ color: 'var(--border-strong)' }}>·</span>
+                  <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1 }}>
+                    {ds.total} conversations
+                  </span>
+                </>}
+              </div>
+
+              {/* DATA SOURCES ROW */}
+              {ds && (
+                <div className="reveal data-sources-row" style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)',
+                    letterSpacing: 2, textTransform: 'uppercase', marginRight: 20, flexShrink: 0,
+                  }}>
+                    Data collected over {periodLabel.toLowerCase()}
+                  </span>
+                  <div className="data-sources-chips" style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap' }}>
+                    {ds.reddit > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <PlatformLogo platform="Reddit" />
+                        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.reddit}</span>
+                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>reddit</span>
+                      </div>
+                    )}
+                    {ds.reddit > 0 && ds.instagram > 0 && (
+                      <span style={{ fontFamily: 'Courier New, monospace', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
+                    )}
+                    {ds.instagram > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <PlatformLogo platform="Instagram" />
+                        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.instagram}</span>
+                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>instagram</span>
+                      </div>
+                    )}
+                    {ds.instagram > 0 && ds.linkedin > 0 && (
+                      <span style={{ fontFamily: 'Courier New, monospace', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
+                    )}
+                    {ds.linkedin > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <PlatformLogo platform="LinkedIn" />
+                        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.linkedin}</span>
+                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>linkedin</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* THE PULSE */}
+              <div className="card reveal-1" style={{ borderLeft: '3px solid var(--accent-warm)' }}>
+                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                  The Pulse
+                </div>
+                <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-primary)', lineHeight: 1.85, margin: '0 0 24px' }}>
+                  "{act1.week_summary}"
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                  <div style={{ flex: 1 }}>
+                    <AnimatedBar score={act1.sentiment_score} />
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 3 }}>
+                      Sentiment Score
                     </div>
-                    <p style={{ margin: "0 0 10px", fontSize: 14, color: "#94a3b8", lineHeight: 1.75, fontStyle: "italic" }}>"{m.quote}"</p>
-                    <div style={{ background: "rgba(99,102,241,0.08)", borderLeft: "2px solid #6366f1", padding: "8px 14px", borderRadius: "0 8px 8px 0" }}>
-                      <span style={{ fontSize: 12, fontFamily: "monospace", color: "#818cf8" }}>DOORBIN → </span>
-                      <span style={{ fontSize: 12, color: "#a5b4fc" }}>{m.doorbin_read}</span>
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 28, color: 'var(--accent-warm)', lineHeight: 1 }}>
+                      {act1.sentiment_score}/100
+                    </div>
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>
+                      0 = very negative · 100 = very positive
                     </div>
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
 
-            {/* Tension */}
-            <div className="card reveal" style={{ animationDelay: "0.2s", background: "rgba(99,102,241,0.06)", borderColor: "rgba(99,102,241,0.2)" }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, color: "#6366f1", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 14 }}>The Tension This Week</div>
-              <div style={{ fontSize: 20, fontWeight: 600, color: "#f8fafc", marginBottom: 14, lineHeight: 1.3 }}>{brief.consumerTension.headline}</div>
-              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.85, margin: 0 }}>{brief.consumerTension.body}</p>
-            </div>
-
-            {/* Competitor + Emerging */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div className="card reveal" style={{ animationDelay: "0.3s" }}>
-                <div style={{ fontSize: 11, letterSpacing: 2, color: "#475569", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 12 }}>Competitor Signal</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "#f87171", marginBottom: 10 }}>{brief.competitorSignal.brand}</div>
-                <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.75, margin: 0 }}>{brief.competitorSignal.signal}</p>
+              {/* WHAT PEOPLE ARE ACTUALLY SAYING */}
+              <div className="card reveal-2">
+                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                  What People Are Actually Saying
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {mentions.map((m, i) => (
+                    <div key={i} style={{
+                      borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                      paddingTop: i > 0 ? 24 : 0,
+                      paddingBottom: i < mentions.length - 1 ? 24 : 0,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <PlatformLogo platform={m.platform} />
+                      </div>
+                      <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.75, margin: '0 0 12px' }}>
+                        "{m.quote}"
+                      </p>
+                      {m.annotation && (
+                        <div style={{
+                          borderLeft: '2px solid var(--accent-warm)',
+                          background: 'rgba(166,61,47,0.04)',
+                          padding: '12px 16px', borderRadius: '0 8px 8px 0',
+                        }}>
+                          <span style={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontSize: 13, color: 'var(--accent-warm)', fontWeight: 600,
+                          }}>
+                            DOORBEEN →{' '}
+                          </span>
+                          <span style={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontSize: 13, color: '#4A4A4A', fontWeight: 400,
+                          }}>
+                            {m.annotation}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="card reveal" style={{ animationDelay: "0.35s" }}>
-                <div style={{ fontSize: 11, letterSpacing: 2, color: "#475569", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 12 }}>Watch This Week</div>
-                <p style={{ fontSize: 13, color: "#fbbf24", lineHeight: 1.75, margin: 0 }}>⚡ {brief.emergingTheme}</p>
-              </div>
-            </div>
 
-            {/* Action */}
-            <div className="card reveal" style={{
-              animationDelay: "0.4s",
-              background: "linear-gradient(135deg,rgba(16,185,129,0.08),rgba(6,182,212,0.05))",
-              borderColor: "rgba(16,185,129,0.25)"
-            }}>
-              <div style={{ fontSize: 11, letterSpacing: 2, color: "#10b981", textTransform: "uppercase", fontFamily: "monospace", marginBottom: 14 }}>One Thing To Do This Week</div>
-              <div style={{ fontSize: 18, fontWeight: 600, color: "#f8fafc", marginBottom: 10, lineHeight: 1.4 }}>{brief.oneThingToDo.action}</div>
-              <p style={{ fontSize: 13, color: "#6ee7b7", margin: 0, lineHeight: 1.75 }}>{brief.oneThingToDo.rationale}</p>
-            </div>
-
-            {/* Footer */}
-            <div style={{ textAlign: "center", paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ fontSize: 11, fontFamily: "monospace", color: "#1e293b", marginBottom: 16, letterSpacing: 1 }}>
-                DOORBIN · CONSUMER INTELLIGENCE FOR INDIAN D2C BRANDS
+              {/* THE TENSION */}
+              <div className="card reveal-3" style={{ background: 'rgba(166,61,47,0.04)', border: '1px solid rgba(166,61,47,0.2)' }}>
+                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--accent-warm)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                  The Tension
+                </div>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 20, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: 18 }}>
+                  {act1.top_tension}
+                </div>
+                <div style={{ borderTop: '1px solid rgba(166,61,47,0.15)', paddingTop: 16 }}>
+                  <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.75, margin: 0 }}>
+                    {act1.top_praise}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => { setBrief(null); setGenerated(false); }} style={{
-                background: "transparent", color: "#6366f1", border: "1px solid rgba(99,102,241,0.3)",
-                borderRadius: 8, padding: "10px 24px", fontSize: 13, cursor: "pointer",
-                fontFamily: "monospace", letterSpacing: 1
-              }}>↺ Generate Another Brief</button>
+
+              {/* COMPETITOR SIGNAL */}
+              <div className="card reveal-3">
+                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                  Competitor Signal
+                </div>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 16, color: 'var(--accent-warm)', marginBottom: 12 }}>
+                  {act1.competitor_signal?.brand}
+                </div>
+                <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.75, margin: 0 }}>
+                  {act1.competitor_signal?.signal}
+                </p>
+              </div>
+
+              {/* ONE THING TO DO */}
+              <div className="card reveal-4" style={{
+                background: 'linear-gradient(135deg, rgba(74,124,89,0.06), rgba(74,124,89,0.02))',
+                border: '1px solid rgba(74,124,89,0.25)',
+              }}>
+                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#4A7C59', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                  One Thing To Do
+                </div>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 18, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 12 }}>
+                  {act1.one_thing_to_do?.action}
+                </div>
+                <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.75, margin: 0 }}>
+                  {act1.one_thing_to_do?.rationale}
+                </p>
+              </div>
+
+              {/* SEE DEEPER INSIGHTS */}
+              {!showAct2 && (
+                <button
+                  onClick={() => setShowAct2(true)}
+                  style={{
+                    width: '100%', background: 'transparent',
+                    border: '1px solid var(--accent-warm)', color: 'var(--accent-warm)',
+                    fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13,
+                    letterSpacing: 1, padding: '16px', borderRadius: 12,
+                    cursor: 'pointer', marginTop: 8, transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(166,61,47,0.06)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  SEE DEEPER INSIGHTS →
+                </button>
+              )}
+
+              {/* ── ACT 2 ──────────────────────────────────────────────── */}
+              {showAct2 && act2 && (
+                <div ref={act2Ref} style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingTop: 8 }}>
+
+                  {/* EMOTION BREAKDOWN */}
+                  <div className="card reveal-1">
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                      How People Are Feeling
+                    </div>
+                    {Object.entries(act2.emotion_breakdown)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([emotion, count]) => (
+                        <HorizBar
+                          key={emotion}
+                          label={emotion.charAt(0).toUpperCase() + emotion.slice(1)}
+                          value={count}
+                          total={emotionTotal}
+                          color={EMOTION_COLORS[emotion] || '#9B9B9B'}
+                          animate={barsReady}
+                        />
+                      ))}
+                  </div>
+
+                  {/* CONSUMER ARCHETYPES */}
+                  <div className="card reveal-2">
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                      Who's Talking About This Brand
+                    </div>
+                    <div className="archetype-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+                      {act2.consumer_archetypes?.map((arch, i) => (
+                        <div key={i} style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 12, padding: 24 }}>
+                          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>
+                            {arch.name}
+                          </div>
+                          <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--accent-warm)', marginBottom: 12 }}>
+                            {arch.size}
+                          </div>
+                          <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
+                            {arch.description}
+                          </p>
+                          <div style={{ borderLeft: '2px solid var(--border)', paddingLeft: 12, marginTop: 14 }}>
+                            <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
+                              {arch.signal}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* PURCHASE STAGE */}
+                  <div className="card reveal-3">
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                      Where Consumers Are In Their Journey
+                    </div>
+                    {['awareness', 'consideration', 'trial', 'post_purchase', 'repeat', 'lapsed'].map(stage => (
+                      <HorizBar
+                        key={stage}
+                        label={stage.replace('_', ' ')}
+                        value={act2.purchase_stage_distribution[stage] || 0}
+                        total={stageTotal}
+                        color="#2E5F8A"
+                        animate={barsReady}
+                      />
+                    ))}
+                  </div>
+
+                  {/* TOP INSIGHTS */}
+                  <div className="card reveal-4">
+                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+                      What Doorbeen Found
+                    </div>
+                    <div>
+                      {act2.top_insights?.map((insight, i) => (
+                        <div key={i} className="insight-row">
+                          <div className="insight-num" style={{
+                            fontFamily: 'Courier New, monospace', fontSize: 28,
+                            color: 'var(--border-strong)', lineHeight: 1,
+                            minWidth: 36, paddingTop: 3, transition: 'color 0.2s', flexShrink: 0,
+                          }}>
+                            {String(i + 1).padStart(2, '0')}
+                          </div>
+                          <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.7, margin: 0 }}>
+                            {insight}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── MAKESIMPLE STRIP ──────────────────────────────────────────── */}
+      <a href="https://makesimple.in" target="_blank" rel="noopener noreferrer"
+        className="makesimple-strip"
+        style={{
+          display: 'block', width: '100%',
+          background: '#F0EBE3', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
+          padding: '20px', textAlign: 'center', textDecoration: 'none',
+        }}
+      >
+        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', fontSize: 13, color: 'var(--text-secondary)' }}>
+          made simple by Makesimple Labs
+        </span>
+      </a>
+
+      {/* ── CTA ───────────────────────────────────────────────────────── */}
+      <div className="cta-section" style={{ background: 'var(--bg-dark)', padding: '80px 40px' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#9B9B9B', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 24 }}>
+            Get This For Your Brand
           </div>
-        )}
+          <h2 className="cta-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 38, color: '#FFFFFF', lineHeight: 1.2, margin: 0 }}>
+            Your consumers are talking.
+          </h2>
+          <h2 className="cta-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 38, color: 'var(--accent-warm)', lineHeight: 1.2, margin: '0 0 24px' }}>
+            Are you listening?
+          </h2>
+          <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: '#9B9B9B', lineHeight: 1.85, maxWidth: 480, margin: '0 auto 40px' }}>
+            We monitor what consumers say about your brand across Reddit, Instagram,
+            and LinkedIn — and turn it into a weekly brief your team can act on.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
+            <div className="cta-input-row" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <input
+                type="email" placeholder="your@email.com"
+                value={email} onChange={e => setEmail(e.target.value)}
+                style={{
+                  flex: 1, minWidth: 140, background: '#3D3D3D', border: '1px solid #4D4D4D',
+                  color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
+                  padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#A63D2F'}
+                onBlur={e => e.target.style.borderColor = '#4D4D4D'}
+              />
+              <input
+                type="text" placeholder="Your brand name"
+                value={brandInput} onChange={e => setBrandInput(e.target.value)}
+                style={{
+                  flex: 1, minWidth: 140, background: '#3D3D3D', border: '1px solid #4D4D4D',
+                  color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
+                  padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
+                }}
+                onFocus={e => e.target.style.borderColor = '#A63D2F'}
+                onBlur={e => e.target.style.borderColor = '#4D4D4D'}
+              />
+            </div>
+            <button
+              onClick={() => console.log({ email, brandName: brandInput })}
+              style={{
+                background: '#A63D2F', color: '#FFFFFF',
+                fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
+                border: 'none', padding: '16px', borderRadius: 8,
+                cursor: 'pointer', width: '100%', transition: 'background 0.2s', letterSpacing: 0.5,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
+              onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
+            >
+              Request a Brief →
+            </button>
+          </div>
+        </div>
       </div>
+
     </div>
   );
 }

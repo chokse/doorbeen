@@ -14,6 +14,15 @@ const BRANDS = [
   { name: 'boAt',            slug: 'boat'          },
 ];
 
+// ── Change 3: Loading step messages ──────────────────────────────────────────
+const LOADING_STEPS = [
+  'Scanning Reddit threads…',
+  'Pulling LinkedIn signals…',
+  'Pulling Instagram signals…',
+  'Running sentiment analysis…',
+  'Drawing conclusions…',
+];
+
 const EMOTION_COLORS = {
   curious:      '#2E5F8A',
   excited:      '#4A7C59',
@@ -24,11 +33,20 @@ const EMOTION_COLORS = {
   neutral:      '#9B9B9B',
 };
 
+// ── Change 6: Sentiment category label + color ────────────────────────────────
+function getSentimentCategory(score) {
+  if (score <= 30) return { label: 'Critical',            color: '#A63D2F' };
+  if (score <= 50) return { label: 'Mixed',               color: '#C49A2B' };
+  if (score <= 65) return { label: 'Cautiously Positive', color: '#C49A2B' };
+  if (score <= 80) return { label: 'Positive',            color: '#4A7C59' };
+  return               { label: 'Strong',               color: '#4A7C59' };
+}
+
 // ── Platform logos ────────────────────────────────────────────────────────
 const PLATFORM_LOGOS = {
   Reddit:    'https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png',
   Instagram: 'https://static.cdninstagram.com/rsrc.php/v3/yI/r/VsNE-OHk_8a.png',
-  LinkedIn:  'https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png',
+  LinkedIn:  'https://cdn-icons-png.flaticon.com/512/174/174857.png',
 };
 
 function PlatformLogo({ platform }) {
@@ -89,6 +107,7 @@ export default function Doorbeen() {
   const [brief,           setBrief]           = useState(null);
   const [periodLabel,     setPeriodLabel]     = useState('Last 30 days');
   const [loading,         setLoading]         = useState(false);
+  const [loadingStep,     setLoadingStep]     = useState(-1);   // Change 3
   const [showAct2,        setShowAct2]        = useState(false);
   const [barsReady,       setBarsReady]       = useState(false);
   const [scrolled,        setScrolled]        = useState(false);
@@ -99,7 +118,8 @@ export default function Doorbeen() {
   const [leadSubmitted,  setLeadSubmitted]  = useState(false);
   const [leadError,      setLeadError]      = useState(null);
 
-  const act2Ref = useRef(null);
+  const act2Ref  = useRef(null);
+  const briefRef = useRef(null);  // Change 4: auto-scroll target
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -116,6 +136,7 @@ export default function Doorbeen() {
     }
   }, [showAct2]);
 
+  // ── Change 3 + 4: selectBrand with animated loading + auto-scroll ──────────
   const selectBrand = async (brand) => {
     setSelectedBrand(brand);
     setShowYourBrand(false);
@@ -123,8 +144,10 @@ export default function Doorbeen() {
     setShowAct2(false);
     setBarsReady(false);
     setLoading(true);
+    setLoadingStep(0);
 
-    const { data } = await supabase
+    // Fetch from Supabase in parallel with the animation
+    const fetchPromise = supabase
       .from('briefs')
       .select('brief_json, period_label')
       .eq('brand', brand.slug)
@@ -132,9 +155,22 @@ export default function Doorbeen() {
       .limit(1)
       .single();
 
+    // Animate through each step (800ms each)
+    for (let i = 0; i < LOADING_STEPS.length; i++) {
+      setLoadingStep(i);
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
+    // Wait for Supabase to resolve (if still pending)
+    const { data } = await fetchPromise;
+
     setBrief(data?.brief_json ?? null);
     setPeriodLabel(data?.period_label ?? 'Last 30 days');
     setLoading(false);
+    setLoadingStep(-1);
+
+    // Change 4: auto-scroll to brief after animation
+    setTimeout(() => briefRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   const selectYourBrand = () => {
@@ -142,6 +178,7 @@ export default function Doorbeen() {
     setSelectedBrand(null);
     setBrief(null);
     setLoading(false);
+    setLoadingStep(-1);
     setShowAct2(false);
     setBarsReady(false);
     setInlineEmail('');
@@ -163,11 +200,27 @@ export default function Doorbeen() {
   const act1 = brief?.act1;
   const act2  = brief?.act2;
 
+  // Change 5: include optional url from brief_json top_mentions
   const mentions = brief ? [
-    { platform: 'Reddit',    quote: act1.top_tension,              annotation: act2?.top_insights?.[0] ?? null },
-    { platform: 'Instagram', quote: act1.top_praise,               annotation: act2?.top_insights?.[1] ?? null },
+    {
+      platform:   'Reddit',
+      quote:      act1.top_tension,
+      annotation: act2?.top_insights?.[0] ?? null,
+      url:        brief?.top_mentions?.[0]?.url ?? null,
+    },
+    {
+      platform:   'Instagram',
+      quote:      act1.top_praise,
+      annotation: act2?.top_insights?.[1] ?? null,
+      url:        brief?.top_mentions?.[1]?.url ?? null,
+    },
     act1.competitor_signal?.signal
-      ? { platform: 'LinkedIn', quote: act1.competitor_signal.signal, annotation: act2?.top_insights?.[2] ?? null }
+      ? {
+          platform:   'LinkedIn',
+          quote:      act1.competitor_signal.signal,
+          annotation: act2?.top_insights?.[2] ?? null,
+          url:        brief?.top_mentions?.[2]?.url ?? null,
+        }
       : null,
   ].filter(Boolean) : [];
 
@@ -179,6 +232,9 @@ export default function Doorbeen() {
     : act1.sentiment_score >= 45 ? 'Mixed'
     : 'Needs Attention'
     : '';
+
+  // Change 6: category for The Pulse sentiment block
+  const sentimentCat = act1 ? getSentimentCategory(act1.sentiment_score) : null;
 
   const ds = act2?.data_sources;
 
@@ -212,11 +268,26 @@ export default function Doorbeen() {
         .reveal-4 { animation: fadeUp 0.5s 0.40s ease both; }
         .reveal-5 { animation: fadeUp 0.5s 0.50s ease both; }
 
+        /* Change 3: loading step animation */
+        @keyframes stepPulse {
+          0%, 100% { opacity: 0.45; }
+          50%      { opacity: 1;    }
+        }
+        @keyframes dotBounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+          40%            { transform: scale(1);   opacity: 1;   }
+        }
+        .loading-step-text {
+          animation: stepPulse 1.6s ease infinite;
+        }
+
+        /* Change 8: non-clickable content cards — no translateY, default cursor */
         .card {
           background: var(--bg-card);
           border: 1px solid var(--border);
           border-radius: 16px;
           padding: 32px;
+          cursor: default;
           transition: border-color 0.2s;
         }
         .card:hover { border-color: var(--border-strong); }
@@ -264,6 +335,17 @@ export default function Doorbeen() {
         .makesimple-strip:hover span { color: var(--accent-warm) !important; }
 
         .inline-input:focus { outline: none; border-color: #A63D2F !important; }
+
+        /* Change 5: source link */
+        .source-link {
+          font-family: 'Poppins', sans-serif;
+          font-size: 12px;
+          color: #A63D2F;
+          text-decoration: none;
+          display: inline-block;
+          margin-top: 10px;
+        }
+        .source-link:hover { text-decoration: underline; }
 
         /* ── Mobile ──────────────────────────────────────────────── */
         @media (max-width: 600px) {
@@ -338,6 +420,7 @@ export default function Doorbeen() {
       `}</style>
 
       {/* ── TOPBAR ────────────────────────────────────────────────────── */}
+      {/* Changes 1 + 2: DOORBEEN letterSpacing 3, "by Make Simple Labs" weight 600 color #6B6B6B letterSpacing 2 */}
       <header style={{
         background: 'var(--bg)', borderBottom: '1px solid var(--border)',
         padding: '16px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -346,11 +429,11 @@ export default function Doorbeen() {
         transition: 'box-shadow 0.3s',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, fontVariant: 'small-caps', letterSpacing: 2, color: '#1A1A1A' }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, fontVariant: 'small-caps', letterSpacing: 3, color: '#1A1A1A' }}>
             DOORBEEN
           </div>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 11, fontVariant: 'small-caps', color: '#9B9B9B', letterSpacing: 1 }}>
-            by Makesimple Labs
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 11, fontVariant: 'small-caps', color: '#6B6B6B', letterSpacing: 2 }}>
+            by Make Simple Labs
           </div>
         </div>
       </header>
@@ -363,9 +446,13 @@ export default function Doorbeen() {
         <h1 className="hero-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 42, color: 'var(--text-primary)', lineHeight: 1.2, margin: '0 0 18px' }}>
           What India is saying<br />about your brand.
         </h1>
-        <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.85, maxWidth: 520, margin: '0 0 56px' }}>
+        <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.85, maxWidth: 520, margin: '0 0 8px' }}>
           Doorbeen monitors Reddit, Instagram, and LinkedIn — then draws the conclusions
           that matter for your brand decisions.
+        </p>
+        {/* Change 9: powered by line */}
+        <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 13, color: '#A63D2F', margin: '0 0 56px' }}>
+          Powered by real public conversations — no surveys, no brand accounts.
         </p>
 
         <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: 0.3 }}>
@@ -459,12 +546,26 @@ export default function Doorbeen() {
 
       {/* ── BRIEF ─────────────────────────────────────────────────────── */}
       {selectedBrand && (
-        <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
+        <div ref={briefRef} className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
 
+          {/* Change 3: animated loading steps */}
           {loading && (
-            <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, color: 'var(--text-muted)', fontSize: 15, padding: '32px 0' }}>
-              Loading brief…
-            </p>
+            <div style={{ padding: '56px 0', textAlign: 'center' }}>
+              <p className="loading-step-text" style={{
+                fontFamily: 'Poppins, sans-serif', fontSize: 14, color: '#6B6B6B',
+                margin: '0 0 24px', minHeight: 22,
+              }}>
+                {loadingStep >= 0 ? LOADING_STEPS[loadingStep] : ''}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 7 }}>
+                {[0, 1, 2].map(i => (
+                  <div key={i} style={{
+                    width: 7, height: 7, borderRadius: '50%', background: '#A63D2F',
+                    animation: `dotBounce 1.2s ${i * 0.18}s ease infinite`,
+                  }} />
+                ))}
+              </div>
+            </div>
           )}
 
           {!loading && !brief && (
@@ -548,7 +649,16 @@ export default function Doorbeen() {
                   <div style={{ flex: 1 }}>
                     <AnimatedBar score={act1.sentiment_score} />
                   </div>
+                  {/* Change 6: sentiment category label above score */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    {sentimentCat && (
+                      <div style={{
+                        fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13,
+                        color: sentimentCat.color, marginBottom: 3,
+                      }}>
+                        {sentimentCat.label}
+                      </div>
+                    )}
                     <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 3 }}>
                       Sentiment Score
                     </div>
@@ -600,6 +710,12 @@ export default function Doorbeen() {
                           </span>
                         </div>
                       )}
+                      {/* Change 5: source link */}
+                      {m.url && (
+                        <a href={m.url} target="_blank" rel="noopener noreferrer" className="source-link">
+                          View original post →
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -633,15 +749,16 @@ export default function Doorbeen() {
                 </p>
               </div>
 
-              {/* ONE THING TO DO */}
+              {/* ONE THING TO DO — Change 7: padding 40px, action 22px, border 2px */}
               <div className="card reveal-4" style={{
+                padding: 40,
                 background: 'linear-gradient(135deg, rgba(74,124,89,0.06), rgba(74,124,89,0.02))',
-                border: '1px solid rgba(74,124,89,0.25)',
+                border: '2px solid rgba(74,124,89,0.4)',
               }}>
                 <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#4A7C59', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
                   One Thing To Do
                 </div>
-                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 18, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 12 }}>
+                <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: 12 }}>
                   {act1.one_thing_to_do?.action}
                 </div>
                 <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.75, margin: 0 }}>

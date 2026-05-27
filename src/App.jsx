@@ -236,6 +236,16 @@ export default function Doorbeen() {
   // Change 6: category for The Pulse sentiment block
   const sentimentCat = act1 ? getSentimentCategory(act1.sentiment_score) : null;
 
+  // Fix 5: crisis flag — low score but more positive than negative emotions
+  const positiveEmotions = (act2?.emotion_breakdown?.excited ?? 0) + (act2?.emotion_breakdown?.satisfied ?? 0);
+  const negativeEmotions  = (act2?.emotion_breakdown?.angry   ?? 0) + (act2?.emotion_breakdown?.disappointed ?? 0);
+  const showCrisisFlag    = act1?.sentiment_score < 40 && positiveEmotions > negativeEmotions;
+  if (showCrisisFlag) {
+    console.warn(
+      `[Doorbeen] Low sentiment score (${act1.sentiment_score}) for brand with more positive (${positiveEmotions}) than negative (${negativeEmotions}) emotions — score reflects crisis signals in the data, not overall mood.`
+    );
+  }
+
   const ds = act2?.data_sources;
 
   return (
@@ -430,11 +440,11 @@ export default function Doorbeen() {
         transition: 'box-shadow 0.3s',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, fontVariant: 'small-caps', letterSpacing: 3, color: '#1A1A1A' }}>
-            DOORBEEN
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 15, letterSpacing: 3, color: '#1A1A1A' }}>
+            doorbeen
           </div>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: 2, color: '#6B6B6B' }}>
-            by Make Simple Labs
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 10, letterSpacing: 2, color: '#6B6B6B' }}>
+            by make simple labs
           </div>
         </div>
       </header>
@@ -472,15 +482,17 @@ export default function Doorbeen() {
             </div>
           ))}
 
-          {/* ── YOUR BRAND — 5th card ──────────────────────────────── */}
-          <div
-            className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
-            onClick={selectYourBrand}
-            style={{ gridColumn: 'span 2' }}
-          >
-            <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
-              Your Brand
+          {/* ── YOUR BRAND — 5th card, centered under 2×2 ─────────── */}
+          <div style={{ gridColumn: 'span 2', display: 'flex', justifyContent: 'center' }}>
+            <div
+              className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
+              onClick={selectYourBrand}
+              style={{ width: '100%', maxWidth: 'calc(50% - 6px)' }}
+            >
+              <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 8, lineHeight: 1 }}>🔭</div>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)', textAlign: 'center' }}>
+                Your Brand
+              </div>
             </div>
           </div>
         </div>
@@ -670,6 +682,11 @@ export default function Doorbeen() {
                     <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>
                       0 = very negative · 100 = very positive
                     </div>
+                    {showCrisisFlag && (
+                      <div style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: 'var(--text-muted)', marginTop: 6, maxWidth: 170, lineHeight: 1.45, textAlign: 'right' }}>
+                        Score reflects crisis signals in data
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -696,17 +713,17 @@ export default function Doorbeen() {
                         <div style={{
                           borderLeft: '2px solid var(--accent-warm)',
                           background: 'rgba(166,61,47,0.04)',
-                          padding: '12px 16px', borderRadius: '0 8px 8px 0',
+                          padding: '14px 18px', borderRadius: '0 8px 8px 0',
                         }}>
                           <span style={{
                             fontFamily: 'Poppins, sans-serif',
-                            fontSize: 13, color: 'var(--accent-warm)', fontWeight: 600,
+                            fontSize: 14, color: 'var(--accent-warm)', fontWeight: 600,
                           }}>
                             DOORBEEN →{' '}
                           </span>
                           <span style={{
                             fontFamily: 'Poppins, sans-serif',
-                            fontSize: 13, color: '#4A4A4A', fontWeight: 400,
+                            fontSize: 14, color: '#4A4A4A', fontWeight: 400,
                           }}>
                             {m.annotation}
                           </span>
@@ -889,10 +906,10 @@ export default function Doorbeen() {
         style={{
           display: 'block', width: '100%',
           background: '#F0EBE3', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)',
-          padding: '20px', textAlign: 'center', textDecoration: 'none',
+          padding: '24px 20px', textAlign: 'center', textDecoration: 'none',
         }}
       >
-        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', fontSize: 13, color: 'var(--text-secondary)' }}>
+        <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', fontSize: 13, color: '#4A4A4A' }}>
           made simple by Makesimple Labs
         </span>
       </a>

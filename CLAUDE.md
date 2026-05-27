@@ -186,3 +186,34 @@ Key demo/LinkedIn message: "All insights in this brief were generated without ac
 Reddit: no improvement with access — already fully public.
 LinkedIn API: still restrictive even with page access — Apify remains better in practice.
 Instagram Graph API is the biggest unlock — replaces Apify scraping entirely, fully legitimate.
+
+---
+
+## Brand Knowledge Base (Planned)
+
+For each brand, build a knowledge base by:
+1. Scraping brand website, about page, product pages
+2. Searching recent news articles and controversies
+3. Claude summarizes into structured brand profile:
+   - Core brand promise
+   - Product range and price points
+   - Known controversies or regulatory issues
+   - Competitor landscape
+   - Recent campaigns or launches
+   - Target consumer
+
+Store in brand_profiles table in Supabase.
+Inject into analysis prompt (test-analyze.mjs) and brief generation (generate-brief.mjs) as context.
+
+Brand profile must be refreshed on the same cadence as brief generation (weekly/monthly/quarterly depending on client plan). Profile refresh runs before data analysis, not after. Pipeline order is:
+
+1. Refresh brand profile (web research + news)
+2. Collect new mentions (Reddit, Instagram, LinkedIn)
+3. Analyze mentions with brand profile as context
+4. Generate brief with brand profile + analyzed mentions
+
+---
+
+## Auto Keyword Generation (Planned)
+
+When a new brand is onboarded, run a Claude call with brand name + category + website to auto-generate reddit_queries and linkedin_queries. Eliminates manual keyword configuration in BRANDS object in doorbeen-collectors.js.

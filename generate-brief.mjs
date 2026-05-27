@@ -107,6 +107,23 @@ if (!mentions?.length) {
 
 console.log(`  Found ${mentions.length} analyzed posts`);
 
+// ── Step 1b: Fetch latest brand profile ───────────────────────────────────────
+console.log('\n── Step 1b: Fetching brand profile…');
+
+const { data: brandProfile } = await supabase
+  .from('brand_profiles')
+  .select('profile_json, refreshed_at')
+  .eq('brand', BRAND)
+  .order('refreshed_at', { ascending: false })
+  .limit(1)
+  .single();
+
+if (brandProfile?.profile_json) {
+  console.log(`  Found profile (refreshed: ${brandProfile.refreshed_at})`);
+} else {
+  console.log('  No brand profile found — proceeding without context');
+}
+
 // ── Step 2: Aggregate ─────────────────────────────────────────────────────────
 console.log('\n── Step 2: Aggregating signal data…');
 
@@ -242,9 +259,24 @@ const SOURCE_POSTS_BLOCK = top3SourcePosts.length > 0
   ? `\nSOURCE POSTS (use these for real quotes and URLs in top_mentions):\n${JSON.stringify(top3SourcePosts, null, 2)}\n`
   : '';
 
+const BRAND_CONTEXT_BLOCK = brandProfile?.profile_json
+  ? `BRAND CONTEXT — read this before analyzing anything:
+${JSON.stringify(brandProfile.profile_json, null, 2)}
+
+Instructions for using this context:
+1. CONTRADICTION DETECTION — when a consumer complaint directly contradicts a brand promise (e.g. 'nothing to hide' brand + packaging tampering complaint), call it out explicitly in key_insight. These are the highest-value signals.
+2. CONTROVERSY AWARENESS — you already know about known controversies. When mentions reference them, don't treat them as isolated incidents. Connect them to the broader pattern.
+3. STRATEGIC FRAMING — every insight must be framed in the context of where this brand is right now (funding stage, growth trajectory, category battles). A packaging complaint means something different for a Series B brand heading toward IPO than for a bootstrapped startup.
+4. COMPETITIVE INTELLIGENCE — use the competitor list to sharpen competitor_signal. Don't just name a competitor — explain the specific threat vector given what you know about both brands.
+5. ONE THING TO DO — must be specific to this brand's actual situation this week. Reference real events, real product names, real platform names. Never generic.
+6. TONE — write like a strategist who has been briefed on this brand, not like an analyst seeing it for the first time.
+
+`
+  : '';
+
 const USER_PROMPT = `Generate a Doorbeen brief for ${BRAND_NAME} based on this consumer data from the last 30 days.
 
-DATA:
+${BRAND_CONTEXT_BLOCK}DATA:
 ${JSON.stringify(aggregated, null, 2)}
 ${SOURCE_POSTS_BLOCK}
 Return ONLY a valid JSON object with this exact structure:

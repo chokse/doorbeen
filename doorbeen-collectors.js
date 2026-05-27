@@ -17,61 +17,24 @@ const supabase = createClient(
 );
 
 // ============================================================
-// BRAND CONFIG — add new brands here
+// BRAND CONFIG — fetched dynamically from Supabase brands table
+// To add a new brand: INSERT a row into the brands table with
+// slug, name, website, reddit_queries, linkedin_queries,
+// instagram_username, instagram_hashtags, subreddits
 // ============================================================
 
-const BRANDS = {
-  superyou: {
-    name: 'SuperYou',
-    reddit_queries: [
-      '"SuperYou" protein',
-      '"super you" protein wafer',
-      'Ranveer Singh protein snack',
-      'SuperYou protein bar India',
-      'superyou wafer review',
-      '"SuperYou" zomato',
-      '"SuperYou" swiggy',
-    ],
-    instagram_username: 'superyoufoods', // their actual Instagram handle
-    instagram_hashtags: ['superyou', 'superyouprotein'],
-    subreddits: ['Fitness_India', 'IndianFitness', 'india', 'blinkit', 'SnacksIndia'],
-    competitors: ['The Whole Truth', 'Cosmix', 'Soulfuel', 'Max Protein'],
-    linkedin_queries: [
-      '"SuperYou" protein',
-      '"SuperYou" Ranveer Singh',
-    ],
-  },
-  thewholetruth: {
-    name: 'The Whole Truth',
-    reddit_queries: [
-      // Precise brand-name queries — low noise, run globally + per subreddit
-      '"the whole truth" protein bar',
-      '"whole truth" protein India',
-      '"thewholetruth" whey',
-      // "TWT" abbreviation — scoped to Reddit to avoid TV-show / gaming noise
-      '"TWT" protein bar site:reddit.com',
-      // Subreddit-restricted TWT variants — cuts through noise on the abbreviation
-      'TWT protein subreddit:Fitness_India',
-      'TWT protein subreddit:IndianFitness',
-      'TWT protein subreddit:AskFitnessIndia',
-      'TWT bar subreddit:SnacksIndia',
-      // Quick-commerce distribution signals
-      '"the whole truth" zomato',
-      '"the whole truth" swiggy',
-      '"TWT" zomato',
-      '"TWT" swiggy',
-    ],
-    instagram_username: 'thewholetruthfoods',
-    instagram_hashtags: ['thewholetruth', 'twtprotein'],
-    subreddits: ['Fitness_India', 'IndianFitness', 'india', 'SnacksIndia', 'AskFitnessIndia'],
-    competitors: ['SuperYou', 'Yoga Bar', 'Cosmix', 'MuscleBlaze'],
-    linkedin_queries: [
-      '"The Whole Truth" protein',
-      '"TWT" protein bar',
-      '"thewholetruth" food',
-    ],
-  },
-};
+async function getBrandConfig(brandSlug) {
+  const { data, error } = await supabase
+    .from('brands')
+    .select('name, reddit_queries, linkedin_queries, instagram_username, instagram_hashtags, subreddits')
+    .eq('slug', brandSlug)
+    .single();
+
+  if (error || !data) {
+    throw new Error(`Brand "${brandSlug}" not found in Supabase brands table: ${error?.message ?? 'no data'}`);
+  }
+  return data;
+}
 
 // ============================================================
 // REDDIT COLLECTOR
@@ -79,8 +42,8 @@ const BRANDS = {
 // Rate limit: stay under 10 requests/minute
 // ============================================================
 
-async function collectRedditMentions(brandKey) {
-  const brand = BRANDS[brandKey];
+async function collectRedditMentions(brandSlug) {
+  const brand = await getBrandConfig(brandSlug);
   const results = [];
 
   for (const query of brand.reddit_queries) {
@@ -94,7 +57,7 @@ async function collectRedditMentions(brandKey) {
       if (globalRes.ok) {
         const data = await globalRes.json();
         const posts = data?.data?.children || [];
-        results.push(...posts.map(p => normalizeRedditPost(p.data, brandKey, 'global_search')));
+        results.push(...posts.map(p => normalizeRedditPost(p.data, brandSlug, 'global_search')));
       }
 
       // Rate limit respect — 6 seconds between calls = 10/minute max
@@ -110,7 +73,7 @@ async function collectRedditMentions(brandKey) {
         if (subRes.ok) {
           const data = await subRes.json();
           const posts = data?.data?.children || [];
-          results.push(...posts.map(p => normalizeRedditPost(p.data, brandKey, sub)));
+          results.push(...posts.map(p => normalizeRedditPost(p.data, brandSlug, sub)));
         }
 
         await sleep(6000);
@@ -129,7 +92,7 @@ async function collectRedditMentions(brandKey) {
     return true;
   });
 
-  console.log(`Reddit: found ${unique.length} unique posts for ${brand.name}`);
+  console.log(`Reddit: found ${unique.length} unique posts for ${brandSlug}`);
   return unique;
 }
 
@@ -163,8 +126,8 @@ function normalizeRedditPost(post, brandKey, source) {
 // 2. Hashtag scraper — gets public posts with brand hashtags
 // ============================================================
 
-async function collectInstagramMentions(brandKey) {
-  const brand = BRANDS[brandKey];
+async function collectInstagramMentions(brandSlug) {
+  const brand = await getBrandConfig(brandSlug);
   const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
   if (!APIFY_TOKEN) {
@@ -187,8 +150,8 @@ async function collectInstagramMentions(brandKey) {
     );
 
     const profilePosts = profileRun || [];
-    results.push(...profilePosts.map(p => normalizeInstagramPost(p, brandKey, 'own_profile')));
-    console.log(`Instagram profile: ${profilePosts.length} posts for ${brand.name}`);
+    results.push(...profilePosts.map(p => normalizeInstagramPost(p, brandSlug, 'own_profile')));
+    console.log(`Instagram profile: ${profilePosts.length} posts for ${brandSlug}`);
   } catch (err) {
     console.error('Instagram profile scrape error:', err.message);
   }
@@ -206,7 +169,7 @@ async function collectInstagramMentions(brandKey) {
       );
 
       const hashtagPosts = hashtagRun || [];
-      results.push(...hashtagPosts.map(p => normalizeInstagramPost(p, brandKey, `hashtag_${hashtag}`)));
+      results.push(...hashtagPosts.map(p => normalizeInstagramPost(p, brandSlug, `hashtag_${hashtag}`)));
       console.log(`Instagram #${hashtag}: ${hashtagPosts.length} posts`);
 
     } catch (err) {
@@ -332,14 +295,14 @@ async function saveMentions(mentions) {
 // Call this from a Vercel cron job (vercel.json) or manually
 // ============================================================
 
-export async function runCollectionJob(brandKey = 'superyou') {
-  console.log(`\n=== Doorbeen Collection Job: ${brandKey} ===`);
+export async function runCollectionJob(brandSlug = 'superyou') {
+  console.log(`\n=== Doorbeen Collection Job: ${brandSlug} ===`);
   console.log(`Started at: ${new Date().toISOString()}`);
 
   const [redditMentions, instagramMentions, linkedinMentions] = await Promise.allSettled([
-    collectRedditMentions(brandKey),
-    collectInstagramMentions(brandKey),
-    collectLinkedInMentions(brandKey),
+    collectRedditMentions(brandSlug),
+    collectInstagramMentions(brandSlug),
+    collectLinkedInMentions(brandSlug),
   ]);
 
   const allMentions = [
@@ -401,8 +364,8 @@ export async function runCollectionJob(brandKey = 'superyou') {
 // low (≤20/query) and add generous delays between runs.
 // ============================================================
 
-async function collectLinkedInMentions(brandKey) {
-  const brand = BRANDS[brandKey];
+async function collectLinkedInMentions(brandSlug) {
+  const brand = await getBrandConfig(brandSlug);
   const APIFY_TOKEN = process.env.APIFY_API_TOKEN;
 
   if (!APIFY_TOKEN) {
@@ -411,11 +374,11 @@ async function collectLinkedInMentions(brandKey) {
   }
 
   if (!brand.linkedin_queries?.length) {
-    console.warn(`No linkedin_queries defined for brand: ${brandKey}`);
+    console.warn(`No linkedin_queries defined for brand: ${brandSlug}`);
     return [];
   }
 
-  console.log(`LinkedIn: running ${brand.linkedin_queries.length} queries for ${brand.name}`);
+  console.log(`LinkedIn: running ${brand.linkedin_queries.length} queries for ${brandSlug}`);
   const results = [];
 
   for (const [qi, query] of brand.linkedin_queries.entries()) {
@@ -434,7 +397,7 @@ async function collectLinkedInMentions(brandKey) {
         APIFY_TOKEN
       );
 
-      const normalized = (posts || []).map(p => normalizeLinkedInPost(p, brandKey, query));
+      const normalized = (posts || []).map(p => normalizeLinkedInPost(p, brandSlug, query));
       results.push(...normalized);
       console.log(`    → ${normalized.length} posts`);
     } catch (err) {

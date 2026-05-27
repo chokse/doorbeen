@@ -49,8 +49,19 @@ const MODEL      = 'claude-sonnet-4-6';  // replaces claude-sonnet-4-20250514 (4
 const BRAND      = 'superyou';
 const DELAY_MS   = 1000;  // 1 s between Claude calls
 
-const SYSTEM_PROMPT = `You are a consumer intelligence analyst for Indian D2C brands. Analyze this social media post and return ONLY valid JSON, no preamble, no markdown:
+// SYSTEM_PROMPT is built dynamically after the brand profile is fetched (see Step 0 in main).
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/** Build the system prompt, optionally injecting the brand profile as context. */
+function buildSystemPrompt(profileJson) {
+  const contextBlock = profileJson
+    ? `\nBRAND CONTEXT:\n${JSON.stringify(profileJson, null, 2)}\n\nUse this context to:\n1. CONTRADICTION DETECTION — flag when this post contradicts the brand's core promise\n2. CONTROVERSY AWARENESS — connect mentions to known controversies rather than treating them as isolated\n3. SHARPER KEY_INSIGHT — make it specific to this brand's actual situation, not generic\n4. COMPETITOR SIGNALS — use the known competitor list to identify meaningful competitive mentions\n`
+    : '';
+
+  return `You are a consumer intelligence analyst for Indian D2C brands. Analyze this social media post and return ONLY valid JSON, no preamble, no markdown.${contextBlock}
+Return this exact JSON structure:
 {
   "sentiment": "positive|negative|neutral|mixed",
   "sentiment_score": -1.0 to 1.0,
@@ -63,9 +74,7 @@ const SYSTEM_PROMPT = `You are a consumer intelligence analyst for Indian D2C br
   "key_insight": "one actionable sentence a brand manager can act on",
   "confidence": 0.0 to 1.0
 }`;
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+}
 
 /** Strip markdown code fences if Claude wraps the JSON in them. */
 function extractJson(text) {
@@ -79,14 +88,14 @@ function extractJson(text) {
 /** Call Claude and parse the JSON response. Returns null on failure.
  *  On a parse failure, retries once by continuing the conversation with
  *  a stricter instruction before giving up. */
-async function analyzePost(title, body) {
+async function analyzePost(title, body, systemPrompt) {
   const userContent = [title, body].filter(Boolean).join('\n\n').slice(0, 4000);
   const messages = [{ role: 'user', content: userContent }];
 
   const response = await anthropic.messages.create({
     model:      MODEL,
     max_tokens: 512,
-    system:     SYSTEM_PROMPT,
+    system:     systemPrompt,
     messages,
   });
 
@@ -103,7 +112,7 @@ async function analyzePost(title, body) {
     const retryResponse = await anthropic.messages.create({
       model:      MODEL,
       max_tokens: 512,
-      system:     SYSTEM_PROMPT,
+      system:     systemPrompt,
       messages: [
         ...messages,
         { role: 'assistant', content: raw },
@@ -131,6 +140,25 @@ console.log(` Brand  : ${BRAND}`);
 console.log(` Model  : ${MODEL}`);
 console.log(` Started: ${new Date().toISOString()}`);
 console.log('═══════════════════════════════════════════════════');
+
+// 0. Fetch latest brand profile and build system prompt
+console.log('\n── Step 0: Fetching brand profile…');
+
+const { data: brandProfile } = await supabase
+  .from('brand_profiles')
+  .select('profile_json, refreshed_at')
+  .eq('brand', BRAND)
+  .order('refreshed_at', { ascending: false })
+  .limit(1)
+  .single();
+
+if (brandProfile?.profile_json) {
+  console.log(`  Found profile (refreshed: ${brandProfile.refreshed_at})`);
+} else {
+  console.warn('  ⚠  No brand profile found — proceeding without context');
+}
+
+const SYSTEM_PROMPT = buildSystemPrompt(brandProfile?.profile_json ?? null);
 
 // 1. Fetch unanalyzed raw mentions
 const { data: mentions, error: fetchErr } = await supabase
@@ -177,7 +205,7 @@ for (const [i, mention] of mentions.entries()) {
 
   let analysis = null;
   try {
-    analysis = await analyzePost(mention.title, mention.body);
+    analysis = await analyzePost(mention.title, mention.body, SYSTEM_PROMPT);
   } catch (err) {
     console.warn(`  ⚠  Claude API error: ${err.message}`);
     failed++;

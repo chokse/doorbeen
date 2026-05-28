@@ -110,7 +110,6 @@ export default function Doorbeen() {
   const [showAct2,        setShowAct2]        = useState(false);
   const [barsReady,       setBarsReady]       = useState(false);
   const [scrolled,        setScrolled]        = useState(false);
-  const [email,           setEmail]           = useState('');
   const [brandInput,      setBrandInput]      = useState('');
   const [briefTriggered,  setBriefTriggered]  = useState(false);
   const [showYourBrand,  setShowYourBrand]  = useState(false);
@@ -567,7 +566,7 @@ export default function Doorbeen() {
                   onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
                   onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
                 >
-                  Request a Brief →
+                  Request a Brief
                 </button>
                 {leadError && (
                   <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#A63D2F', marginTop: 12, marginBottom: 0 }}>
@@ -912,7 +911,7 @@ export default function Doorbeen() {
         }}
       >
         <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontStyle: 'italic', fontSize: 13, color: '#4A4A4A' }}>
-          made simple by Makesimple Labs
+          doorbeen, 2026<br />make simple labs, Goa
         </span>
       </a>
 
@@ -929,35 +928,42 @@ export default function Doorbeen() {
             Are you listening?
           </h2>
           <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: '#9B9B9B', lineHeight: 1.85, maxWidth: 480, margin: '0 auto 40px' }}>
-            We monitor what consumers say about your brand across Reddit, Instagram,
-            and LinkedIn — and turn it into a weekly brief your team can act on.
+            We monitor what consumers say about your brand across Reddit, Instagram, and LinkedIn. We turn it into a weekly brief your team can act on.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
-            <input
-              type="email" placeholder="your@email.com"
-              value={email} onChange={e => setEmail(e.target.value)}
-              style={{
-                width: '100%', background: '#3D3D3D', border: '1px solid #4D4D4D',
-                color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
-                padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
-                boxSizing: 'border-box',
-              }}
-              onFocus={e => e.target.style.borderColor = '#A63D2F'}
-              onBlur={e => e.target.style.borderColor = '#4D4D4D'}
-            />
-            <button
-              onClick={() => console.log({ email })}
-              style={{
-                background: '#A63D2F', color: '#FFFFFF',
-                fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
-                border: 'none', padding: '16px', borderRadius: 8,
-                cursor: 'pointer', width: '100%', transition: 'background 0.2s', letterSpacing: 0.5,
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
-              onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
-            >
-              Request a Brief →
-            </button>
+            {leadSubmitted ? (
+              <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: '#9B9B9B', margin: 0, textAlign: 'center' }}>
+                We'll be in touch.
+              </p>
+            ) : (
+              <>
+                <input
+                  type="email" placeholder="your@email.com"
+                  value={inlineEmail} onChange={e => setInlineEmail(e.target.value)}
+                  style={{
+                    width: '100%', background: '#3D3D3D', border: '1px solid #4D4D4D',
+                    color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
+                    padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
+                    boxSizing: 'border-box',
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#A63D2F'}
+                  onBlur={e => e.target.style.borderColor = '#4D4D4D'}
+                />
+                <button
+                  onClick={submitLead}
+                  style={{
+                    background: '#A63D2F', color: '#FFFFFF',
+                    fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
+                    border: 'none', padding: '16px', borderRadius: 8,
+                    cursor: 'pointer', width: '100%', transition: 'background 0.2s', letterSpacing: 0.5,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
+                >
+                  Request a Brief
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -54,10 +54,9 @@ every pitch, every line of copy.
 ---
 
 ## What We're Building Next (in order)
-1. Hardcoded briefs for 3 additional brands: The Whole Truth, Minimalist, boAt
-2. Makesimple-branded public demo page with brand selector
-3. 10 briefs/day global limit + waitlist (email + brand name)
-4. Connect real Reddit data to brief generation
+1. Makesimple-branded public demo page with brand selector — DONE
+2. 10 briefs/day global limit + waitlist (email + brand name) — PENDING
+3. Connect real Reddit data to brief generation — DONE
 
 ---
 
@@ -90,11 +89,13 @@ every pitch, every line of copy.
 - Core tension: beloved for transparency, challenged for contradicting it
 - S-tier in plant protein rankings, but ₹4,500/kg seen as student-unfriendly
 
-### Minimalist
-- Research pending
-
-### boAt
-- Research pending
+### Mamaearth
+- Central tension: "aware but not chosen" — 123 awareness mentions vs 16 consideration
+- Cleanser rated 3/10 in r/skincarebitchies — essential oil irritation, loses to CeraVe/Cetaphil
+- Minimalist is the credibility alternative, not a price competitor
+- Rice Water range getting organic UGC without paid push — genuine pull
+- 277 of 525 posts are LinkedIn (investor/professional chatter) — consumer signal set is thin
+- ASCI violations and Project Neev distributor crisis are live reputation risks
 
 ---
 
@@ -159,6 +160,7 @@ tension, opportunity, or risk. Never generic.
 ## Known Limitations
 
 - **LinkedIn via `harvestapi~linkedin-post-search` (free tier):** ~80% of posts return with empty body — only ~20% have extractable text content. 57 analyzable posts out of 268 collected for thewholetruth. Worth upgrading tier or switching actors before production.
+- **test-collect.mjs --source flag:** supports `--instagram`, `--linkedin`, `--reddit` to run a single source. Default runs all three.
 
 ---
 
@@ -166,7 +168,7 @@ tension, opportunity, or risk. Never generic.
 
 - Doorbeen is positioned as "AI Consumer Intelligence" not "social listening"
 - First client is SuperYou via design partner arrangement
-- Demo page will have 4 hardcoded brands: SuperYou, The Whole Truth, Minimalist, boAt
+- Demo page has 3 live brands: SuperYou, The Whole Truth, Mamaearth — plus "Your Brand" email capture card. boAt and Minimalist dropped.
 - 10 briefs/day global cap with email waitlist for overflow
 - Regenerate brief button removed — one brand = one definitive brief
 - Platform-wise sentiment breakdown is a Pro feature, not default

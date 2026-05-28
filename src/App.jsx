@@ -527,14 +527,8 @@ export default function Doorbeen() {
             background: '#FDFAF7', border: '1px solid #E8E2DA',
             borderRadius: 16, textAlign: 'center',
           }}>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 11, fontVariant: 'small-caps', color: '#9B9B9B', letterSpacing: 2, marginBottom: 16 }}>
-              Get Doorbeen for your brand
-            </div>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: '#1A1A1A', marginBottom: 8 }}>
-              Your consumers are talking.
-            </div>
             <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#6B6B6B', marginBottom: 32, lineHeight: 1.7 }}>
-              We monitor Reddit, Instagram, and LinkedIn — and turn what they're saying into a weekly brief your team can act on.
+              We monitor what consumers say about your brand across Reddit, Instagram, and LinkedIn. We turn it into a weekly brief your team can act on.
             </div>
 
             {leadSubmitted ? (
@@ -566,7 +560,7 @@ export default function Doorbeen() {
                   onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
                   onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
                 >
-                  Request a Brief
+                  Request a Brief for Your Brand
                 </button>
                 {leadError && (
                   <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#A63D2F', marginTop: 12, marginBottom: 0 }}>
@@ -915,58 +909,6 @@ export default function Doorbeen() {
         </span>
       </a>
 
-      {/* ── CTA ───────────────────────────────────────────────────────── */}
-      <div className="cta-section" style={{ background: 'var(--bg-dark)', padding: '80px 40px' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#9B9B9B', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 24 }}>
-            Get This For Your Brand
-          </div>
-          <h2 className="cta-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 38, color: '#FFFFFF', lineHeight: 1.2, margin: 0 }}>
-            Your consumers are talking.
-          </h2>
-          <h2 className="cta-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 38, color: 'var(--accent-warm)', lineHeight: 1.2, margin: '0 0 24px' }}>
-            Are you listening?
-          </h2>
-          <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: '#9B9B9B', lineHeight: 1.85, maxWidth: 480, margin: '0 auto 40px' }}>
-            We monitor what consumers say about your brand across Reddit, Instagram, and LinkedIn. We turn it into a weekly brief your team can act on.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
-            {leadSubmitted ? (
-              <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 15, color: '#9B9B9B', margin: 0, textAlign: 'center' }}>
-                We'll be in touch.
-              </p>
-            ) : (
-              <>
-                <input
-                  type="email" placeholder="your@email.com"
-                  value={inlineEmail} onChange={e => setInlineEmail(e.target.value)}
-                  style={{
-                    width: '100%', background: '#3D3D3D', border: '1px solid #4D4D4D',
-                    color: '#FFFFFF', fontFamily: 'Poppins, sans-serif', fontSize: 14,
-                    padding: '14px 18px', borderRadius: 8, outline: 'none', transition: 'border-color 0.2s',
-                    boxSizing: 'border-box',
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#A63D2F'}
-                  onBlur={e => e.target.style.borderColor = '#4D4D4D'}
-                />
-                <button
-                  onClick={submitLead}
-                  style={{
-                    background: '#A63D2F', color: '#FFFFFF',
-                    fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15,
-                    border: 'none', padding: '16px', borderRadius: 8,
-                    cursor: 'pointer', width: '100%', transition: 'background 0.2s', letterSpacing: 0.5,
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#8B3225'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#A63D2F'}
-                >
-                  Request a Brief
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
 
     </div>
   );

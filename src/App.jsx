@@ -117,8 +117,9 @@ export default function Doorbeen() {
   const [leadSubmitted,  setLeadSubmitted]  = useState(false);
   const [leadError,      setLeadError]      = useState(null);
 
-  const act2Ref  = useRef(null);
-  const briefRef = useRef(null);  // Change 4: auto-scroll target
+  const act2Ref       = useRef(null);
+  const briefRef      = useRef(null);  // Change 4: auto-scroll target
+  const yourBrandRef  = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -194,6 +195,7 @@ export default function Doorbeen() {
     setLeadSubmitted(false);
     setLeadError(null);
     setBriefTriggered(false);
+    setTimeout(() => yourBrandRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
   const submitLead = async () => {
@@ -521,12 +523,15 @@ export default function Doorbeen() {
 
       {/* ── YOUR BRAND INLINE FORM ────────────────────────────────────── */}
       {showYourBrand && (
-        <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
+        <div ref={yourBrandRef} className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px 80px' }}>
           <div style={{
             maxWidth: 600, margin: '0 auto', padding: 40,
             background: '#FDFAF7', border: '1px solid #E8E2DA',
             borderRadius: 16, textAlign: 'center',
           }}>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: '#1A1A1A', marginBottom: 12, lineHeight: 1.35 }}>
+              Your consumers are talking about you. Do you want to know what?
+            </div>
             <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 15, color: '#6B6B6B', marginBottom: 32, lineHeight: 1.7 }}>
               We monitor what consumers say about your brand across Reddit, Instagram, and LinkedIn. We turn it into a weekly brief your team can act on.
             </div>

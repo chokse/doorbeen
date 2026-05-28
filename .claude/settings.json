@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell($file = \"C:\\\\Users\\\\aniru\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-aniru-Desktop-doorbeen\\\\985c29af-a40d-431f-a382-3ac1ca8b3ec5\\\\tasks\\\\bibjqlii7.output\"; $lines = Get-Content $file; $last = $lines | Select-String '^\\\\[\\(\\\\d+\\)/340\\\\]' | Select-Object -Last 1; Write-Output \"Lines: $\\($lines.Count\\) | Last: $last\")"
+      "PowerShell($file = \"C:\\\\Users\\\\aniru\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-aniru-Desktop-doorbeen\\\\985c29af-a40d-431f-a382-3ac1ca8b3ec5\\\\tasks\\\\bibjqlii7.output\"; $lines = Get-Content $file; $last = $lines | Select-String '^\\\\[\\(\\\\d+\\)/340\\\\]' | Select-Object -Last 1; Write-Output \"Lines: $\\($lines.Count\\) | Last: $last\")",
+      "Bash(node --env-file=.env test-collect.mjs minimalist)",
+      "Bash(node --env-file=.env test-analyze.mjs minimalist)",
+      "Bash(node --env-file=.env run-brand-pipeline.mjs mamaearth)",
+      "Bash(node --env-file=.env test-analyze.mjs mamaearth)"
     ]
   }
 }

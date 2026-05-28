@@ -45,9 +45,15 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY });
 
 // ── Config ─────────────────────────────────────────────────────────────────
-const MODEL      = 'claude-sonnet-4-6';  // replaces claude-sonnet-4-20250514 (404'd early)
-const BRAND      = 'superyou';
-const DELAY_MS   = 1000;  // 1 s between Claude calls
+const MODEL    = 'claude-haiku-4-5-20251001';
+const DELAY_MS = 1000;  // 1 s between Claude calls
+
+const BRAND = process.argv[2];
+if (!BRAND) {
+  console.error('Usage: node --env-file=.env test-analyze.mjs <brand-slug>');
+  console.error('Example: node --env-file=.env test-analyze.mjs thewholetruth');
+  process.exit(1);
+}
 
 // SYSTEM_PROMPT is built dynamically after the brand profile is fetched (see Step 0 in main).
 

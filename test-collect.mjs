@@ -16,27 +16,16 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Brand config ───────────────────────────────────────────────────────────
-const BRAND = {
-  key:  'superyou',
-  name: 'SuperYou',
-  reddit_queries: [
-    '"SuperYou" protein',
-    '"super you" protein wafer',
-    'Ranveer Singh protein snack',
-    'SuperYou protein bar India',
-    'superyou wafer review',
-    '"SuperYou" zomato',
-    '"SuperYou" swiggy',
-  ],
-  subreddits:          ['Fitness_India', 'IndianFitness', 'india', 'blinkit', 'SnacksIndia'],
-  instagram_username:  'superyoufoods',
-  instagram_hashtags:  ['superyou', 'superyouprotein'],
-  linkedin_queries:    [
-    '"SuperYou" protein',
-    '"SuperYou" Ranveer Singh',
-  ],
-};
+// ── Brand slug from CLI ────────────────────────────────────────────────────
+const BRAND_SLUG = process.argv[2];
+if (!BRAND_SLUG) {
+  console.error('Usage: node --env-file=.env test-collect.mjs <brand-slug>');
+  console.error('Example: node --env-file=.env test-collect.mjs thewholetruth');
+  process.exit(1);
+}
+
+// BRAND is built dynamically in main from the Supabase brands table (see Step 0)
+let BRAND;
 
 const REDDIT_DELAY_MS = 2000;
 const APIFY_POLL_MS   = 5000;
@@ -300,32 +289,70 @@ async function saveMentions(mentions) {
   if (!mentions.length) return { saved: 0, skipped: 0 };
 
   const ids = mentions.map(m => m.external_id);
-  const { data: existing, error: fetchErr } = await supabase
-    .from('raw_mentions')
-    .select('external_id')
-    .in('external_id', ids);
 
-  if (fetchErr) {
-    console.error('Supabase pre-check error:', fetchErr.message);
-    return { saved: 0, skipped: 0 };
+  // Batch pre-check to avoid URL length limits on large .in() queries
+  const CHUNK = 200;
+  const existingIds = new Set();
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const { data: existing, error: fetchErr } = await supabase
+      .from('raw_mentions')
+      .select('external_id')
+      .in('external_id', chunk);
+    if (fetchErr) {
+      console.error('Supabase pre-check error:', fetchErr.message);
+      return { saved: 0, skipped: 0 };
+    }
+    for (const r of existing || []) existingIds.add(r.external_id);
   }
 
-  const existingIds  = new Set((existing || []).map(r => r.external_id));
   const newMentions  = mentions.filter(m => !existingIds.has(m.external_id));
   const skippedCount = mentions.length - newMentions.length;
 
   if (!newMentions.length) return { saved: 0, skipped: skippedCount };
 
-  const { error: insertErr } = await supabase.from('raw_mentions').insert(newMentions);
-  if (insertErr) {
-    console.error('Supabase insert error:', insertErr.message);
-    return { saved: 0, skipped: skippedCount };
+  // Batch inserts to avoid payload size limits
+  let saved = 0;
+  for (let i = 0; i < newMentions.length; i += CHUNK) {
+    const chunk = newMentions.slice(i, i + CHUNK);
+    const { error: insertErr } = await supabase.from('raw_mentions').insert(chunk);
+    if (insertErr) {
+      console.error('Supabase insert error:', insertErr.message);
+      return { saved, skipped: skippedCount };
+    }
+    saved += chunk.length;
   }
 
-  return { saved: newMentions.length, skipped: skippedCount };
+  return { saved, skipped: skippedCount };
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────
+
+// Step 0: fetch brand config from Supabase
+console.log(`\n── Step 0: Fetching brand config for "${BRAND_SLUG}"…`);
+const { data: brandConfig, error: brandErr } = await supabase
+  .from('brands')
+  .select('slug, name, reddit_queries, linkedin_queries, instagram_username, instagram_hashtags, subreddits')
+  .eq('slug', BRAND_SLUG)
+  .single();
+
+if (brandErr || !brandConfig) {
+  console.error(`Brand "${BRAND_SLUG}" not found in brands table:`, brandErr?.message ?? 'no data');
+  console.error('Run refresh-brand-profile.mjs first to create the brand row.');
+  process.exit(1);
+}
+
+BRAND = {
+  key:                BRAND_SLUG,
+  name:               brandConfig.name,
+  reddit_queries:     brandConfig.reddit_queries     || [],
+  subreddits:         brandConfig.subreddits         || [],
+  instagram_username: brandConfig.instagram_username || '',
+  instagram_hashtags: brandConfig.instagram_hashtags || [],
+  linkedin_queries:   brandConfig.linkedin_queries   || [],
+};
+console.log(`  Found: ${BRAND.name} (${BRAND.reddit_queries.length} Reddit queries, ${BRAND.linkedin_queries.length} LinkedIn queries)`);
+
 console.log('═══════════════════════════════════════════════════');
 console.log(' Doorbeen — Full Collection Test (All Sources)');
 console.log(` Brand   : ${BRAND.name}`);

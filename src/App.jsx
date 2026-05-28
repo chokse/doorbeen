@@ -10,8 +10,7 @@ const supabase = createClient(
 const BRANDS = [
   { name: 'SuperYou',        slug: 'superyou'      },
   { name: 'The Whole Truth', slug: 'thewholetruth' },
-  { name: 'Minimalist',      slug: 'minimalist'    },
-  { name: 'boAt',            slug: 'boat'          },
+  { name: 'Mamaearth',       slug: 'mamaearth'     },
 ];
 
 // ── Change 3: Loading step messages ──────────────────────────────────────────
@@ -331,20 +330,6 @@ export default function Doorbeen() {
         .brand-card:hover { border-color: #A63D2F; }
         .brand-card.selected { background: #1A1A1A; border: 2px solid #1A1A1A; }
 
-        .brand-card.your-brand {
-          border-style: dashed;
-          border-color: #C8BFB5;
-        }
-        .brand-card.your-brand:hover {
-          border-style: dashed;
-          border-color: var(--accent-warm);
-        }
-        .brand-card.your-brand:hover .your-brand-label { color: #1A1A1A; }
-        .brand-card.your-brand.selected {
-          border-style: dashed;
-          border-color: var(--accent-warm);
-          background: rgba(166,61,47,0.04);
-        }
 
         .insight-row {
           display: flex;
@@ -502,15 +487,11 @@ export default function Doorbeen() {
 
             {/* ── YOUR BRAND — 5th card, centered under 2×2 ─────────── */}
             <div
-              className={`brand-card your-brand${showYourBrand ? ' selected' : ''}`}
+              className={`brand-card${showYourBrand ? ' selected' : ''}`}
               onClick={selectYourBrand}
-              style={{ gridColumn: 'span 2', maxWidth: '50%', margin: '0 auto', width: '100%' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span>🔭</span>
-                <span className="your-brand-label" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#6B6B6B' }}>
-                  your brand
-                </span>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: showYourBrand ? '#fff' : '#1A1A1A', textAlign: 'center' }}>
+                Your Brand
               </div>
             </div>
           </div>

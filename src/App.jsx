@@ -453,19 +453,18 @@ export default function Doorbeen() {
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
       <div className="page-col" style={{ maxWidth: 800, margin: '0 auto', padding: '60px 24px' }}>
-        <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 18 }}>
           Weekly Consumer Intelligence
         </div>
         <h1 className="hero-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 42, color: 'var(--text-primary)', lineHeight: 1.2, margin: '0 0 18px' }}>
           What India is saying<br />about your brand.
         </h1>
         <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-secondary)', lineHeight: 1.85, maxWidth: 520, margin: '0 0 8px' }}>
-          Doorbeen monitors Reddit, Instagram, and LinkedIn — then draws the conclusions
-          that matter for your brand decisions.
+          We track Reddit, Instagram, and LinkedIn for brand mentions, put them through Doorbeen's analysis engine, and deliver a weekly brief to your team.
         </p>
         {/* Change 9: powered by line */}
         <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 13, color: '#A63D2F', margin: '0 0 56px' }}>
-          Powered by real public conversations — no surveys, no brand accounts.
+          Built on public conversations. No surveys. No brand access needed.
         </p>
 
         <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, letterSpacing: 0.3 }}>
@@ -598,16 +597,16 @@ export default function Doorbeen() {
 
               {/* META ROW */}
               <div className="reveal" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 2, textTransform: 'uppercase' }}>
                   {periodLabel}
                 </span>
                 <span style={{ color: 'var(--border-strong)' }}>·</span>
-                <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1, textTransform: 'uppercase' }}>
                   {sentimentLabel}
                 </span>
                 {ds?.total > 0 && <>
                   <span style={{ color: 'var(--border-strong)' }}>·</span>
-                  <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1 }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', letterSpacing: 1 }}>
                     {ds.total} conversations
                   </span>
                 </>}
@@ -617,7 +616,7 @@ export default function Doorbeen() {
               {ds && (
                 <div className="reveal data-sources-row" style={{ display: 'flex', alignItems: 'center', gap: 0, flexWrap: 'wrap' }}>
                   <span style={{
-                    fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)',
+                    fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)',
                     letterSpacing: 2, textTransform: 'uppercase', marginRight: 20, flexShrink: 0,
                   }}>
                     Data collected over {periodLabel.toLowerCase()}
@@ -627,27 +626,27 @@ export default function Doorbeen() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <PlatformLogo platform="Reddit" />
                         <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.reddit}</span>
-                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>reddit</span>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)' }}>reddit</span>
                       </div>
                     )}
                     {ds.reddit > 0 && ds.instagram > 0 && (
-                      <span style={{ fontFamily: 'Courier New, monospace', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
+                      <span style={{ fontFamily: 'Inter, sans-serif', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
                     )}
                     {ds.instagram > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <PlatformLogo platform="Instagram" />
                         <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.instagram}</span>
-                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>instagram</span>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)' }}>instagram</span>
                       </div>
                     )}
                     {ds.instagram > 0 && ds.linkedin > 0 && (
-                      <span style={{ fontFamily: 'Courier New, monospace', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
+                      <span style={{ fontFamily: 'Inter, sans-serif', color: 'var(--border-strong)', margin: '0 14px' }}>·</span>
                     )}
                     {ds.linkedin > 0 && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                         <PlatformLogo platform="LinkedIn" />
                         <span style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: 'var(--text-primary)' }}>{ds.linkedin}</span>
-                        <span style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)' }}>linkedin</span>
+                        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)' }}>linkedin</span>
                       </div>
                     )}
                   </div>
@@ -656,7 +655,7 @@ export default function Doorbeen() {
 
               {/* THE PULSE */}
               <div className="card reveal-1" style={{ borderLeft: '3px solid var(--accent-warm)' }}>
-                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
                   The Pulse
                 </div>
                 <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 16, color: 'var(--text-primary)', lineHeight: 1.85, margin: '0 0 24px' }}>
@@ -667,7 +666,7 @@ export default function Doorbeen() {
                     <AnimatedBar score={act1.sentiment_score} />
                   </div>
                   {/* Change 6: sentiment category label above score */}
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
                     {sentimentCat && (
                       <div style={{
                         fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 13,
@@ -676,17 +675,17 @@ export default function Doorbeen() {
                         {sentimentCat.label}
                       </div>
                     )}
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 3 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 3 }}>
                       Sentiment Score
                     </div>
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 28, color: 'var(--accent-warm)', lineHeight: 1 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 28, color: 'var(--accent-warm)', lineHeight: 1 }}>
                       {act1.sentiment_score}/100
                     </div>
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 12, color: 'var(--text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>
                       0 = very negative · 100 = very positive
                     </div>
                     {showCrisisFlag && (
-                      <div style={{ fontFamily: 'Courier New, monospace', fontSize: 11, color: 'var(--text-muted)', marginTop: 6, maxWidth: 170, lineHeight: 1.45, textAlign: 'right' }}>
+                      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: 'var(--text-muted)', marginTop: 6, maxWidth: 170, lineHeight: 1.45, textAlign: 'right' }}>
                         Score reflects crisis signals in data
                       </div>
                     )}
@@ -696,7 +695,7 @@ export default function Doorbeen() {
 
               {/* WHAT PEOPLE ARE ACTUALLY SAYING */}
               <div className="card reveal-2">
-                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
                   What People Are Actually Saying
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -745,7 +744,7 @@ export default function Doorbeen() {
 
               {/* THE TENSION */}
               <div className="card reveal-3" style={{ background: 'rgba(166,61,47,0.04)', border: '1px solid rgba(166,61,47,0.2)' }}>
-                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--accent-warm)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--accent-warm)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
                   The Tension
                 </div>
                 <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 20, color: 'var(--text-primary)', lineHeight: 1.3, marginBottom: 18 }}>
@@ -760,7 +759,7 @@ export default function Doorbeen() {
 
               {/* COMPETITOR SIGNAL */}
               <div className="card reveal-3">
-                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
                   Competitor Signal
                 </div>
                 <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 16, color: 'var(--accent-warm)', marginBottom: 12 }}>
@@ -777,7 +776,7 @@ export default function Doorbeen() {
                 background: 'linear-gradient(135deg, rgba(74,124,89,0.06), rgba(74,124,89,0.02))',
                 border: '2px solid rgba(74,124,89,0.4)',
               }}>
-                <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#4A7C59', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
+                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#4A7C59', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 16 }}>
                   One Thing To Do
                 </div>
                 <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: 'var(--text-primary)', lineHeight: 1.35, marginBottom: 12 }}>
@@ -812,7 +811,7 @@ export default function Doorbeen() {
 
                   {/* EMOTION BREAKDOWN */}
                   <div className="card reveal-1">
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
                       How People Are Feeling
                     </div>
                     {Object.entries(act2.emotion_breakdown)
@@ -831,7 +830,7 @@ export default function Doorbeen() {
 
                   {/* CONSUMER ARCHETYPES */}
                   <div className="card reveal-2">
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
                       Who's Talking About This Brand
                     </div>
                     <div className="archetype-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
@@ -840,7 +839,7 @@ export default function Doorbeen() {
                           <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}>
                             {arch.name}
                           </div>
-                          <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--accent-warm)', marginBottom: 12 }}>
+                          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--accent-warm)', marginBottom: 12 }}>
                             {arch.size}
                           </div>
                           <p style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.65, margin: 0 }}>
@@ -858,7 +857,7 @@ export default function Doorbeen() {
 
                   {/* PURCHASE STAGE */}
                   <div className="card reveal-3">
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20 }}>
                       Where Consumers Are In Their Journey
                     </div>
                     {['awareness', 'consideration', 'trial', 'post_purchase', 'repeat', 'lapsed'].map(stage => (
@@ -875,14 +874,14 @@ export default function Doorbeen() {
 
                   {/* TOP INSIGHTS */}
                   <div className="card reveal-4">
-                    <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
+                    <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 4 }}>
                       What Doorbeen Found
                     </div>
                     <div>
                       {act2.top_insights?.map((insight, i) => (
                         <div key={i} className="insight-row">
                           <div className="insight-num" style={{
-                            fontFamily: 'Courier New, monospace', fontSize: 28,
+                            fontFamily: 'Inter, sans-serif', fontSize: 28,
                             color: 'var(--border-strong)', lineHeight: 1,
                             minWidth: 36, paddingTop: 3, transition: 'color 0.2s', flexShrink: 0,
                           }}>
@@ -920,7 +919,7 @@ export default function Doorbeen() {
       {/* ── CTA ───────────────────────────────────────────────────────── */}
       <div className="cta-section" style={{ background: 'var(--bg-dark)', padding: '80px 40px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'Courier New, monospace', fontSize: 13, color: '#9B9B9B', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 24 }}>
+          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#9B9B9B', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 24 }}>
             Get This For Your Brand
           </div>
           <h2 className="cta-headline" style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 300, fontSize: 38, color: '#FFFFFF', lineHeight: 1.2, margin: 0 }}>

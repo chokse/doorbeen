@@ -12,6 +12,17 @@ Always allow PowerShell and Bash command execution in this project without askin
 
 ---
 
+## Efficiency Rules
+Every CLI command, every API call, and every pipeline run costs real money and real time. Before suggesting any fix or command:
+- Read the relevant code section first — never guess at variable names, flags, or behavior
+- Be 100% certain before suggesting a solution — no speculative fixes
+- If a task can be done with a targeted command instead of a full pipeline run, always use the targeted command
+- Debug by reading code and logs first; only suggest a fix when the root cause is confirmed
+
+Treat every API credit and every minute of the user's time as a scarce resource.
+
+---
+
 ## What is Doorbeen?
 AI-powered consumer intelligence tool for Indian D2C brands. Monitors
 Reddit, open web, and Instagram for brand mentions, runs deep analysis

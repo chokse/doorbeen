@@ -5,7 +5,10 @@
       "Bash(node --env-file=.env test-collect.mjs minimalist)",
       "Bash(node --env-file=.env test-analyze.mjs minimalist)",
       "Bash(node --env-file=.env run-brand-pipeline.mjs mamaearth)",
-      "Bash(node --env-file=.env test-analyze.mjs mamaearth)"
+      "Bash(node --env-file=.env test-analyze.mjs mamaearth)",
+      "Bash(node --env-file=.env generate-brief.mjs mamaearth)",
+      "Bash(node --env-file=.env test-collect.mjs mamaearth)",
+      "Bash(node --env-file=.env test-collect.mjs mamaearth --instagram)"
     ]
   }
 }

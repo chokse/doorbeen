@@ -46,7 +46,8 @@ const anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY });
 
 // ── Config ─────────────────────────────────────────────────────────────────
 const MODEL    = 'claude-haiku-4-5-20251001';
-const DELAY_MS = 1000;  // 1 s between Claude calls
+const CONCURRENCY = 5;
+const BATCH_SIZE  = 20;
 
 const BRAND = process.argv[2];
 if (!BRAND) {
@@ -82,12 +83,16 @@ Return this exact JSON structure:
 }`;
 }
 
-/** Strip markdown code fences if Claude wraps the JSON in them. */
+/** Strip fences; fall back to brace-scan if result doesn't start with {. */
 function extractJson(text) {
   const stripped = text
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/, '')
     .trim();
+  if (stripped.startsWith('{')) return stripped;
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start !== -1 && end > start) return text.slice(start, end + 1);
   return stripped;
 }
 
@@ -101,7 +106,7 @@ async function analyzePost(title, body, systemPrompt) {
   const response = await anthropic.messages.create({
     model:      MODEL,
     max_tokens: 512,
-    system:     systemPrompt,
+    system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
     messages,
   });
 
@@ -118,7 +123,7 @@ async function analyzePost(title, body, systemPrompt) {
     const retryResponse = await anthropic.messages.create({
       model:      MODEL,
       max_tokens: 512,
-      system:     systemPrompt,
+      system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [
         ...messages,
         { role: 'assistant', content: raw },
@@ -187,114 +192,115 @@ if (!mentions?.length) {
 console.log(`\nFound ${mentions.length} unanalyzed posts — processing...\n`);
 
 // 2. Track results for the summary
-let processed = 0;
-let saved     = 0;
-let failed    = 0;
-let skipped   = 0;
-const sentimentCounts  = {};
-const emotionCounts    = {};
-const topicCounts      = {};
-const topInsights      = [];   // { confidence, key_insight, url }
+let saved   = 0;
+let failed  = 0;
+let skipped = 0;
+const sentimentCounts = {};
+const emotionCounts   = {};
+const topicCounts     = {};
+const topInsights     = [];
 
-// 3. Analyse each post
-for (const [i, mention] of mentions.entries()) {
-  const label = mention.title?.slice(0, 60) || mention.url?.slice(-40) || mention.id;
-  console.log(`[${i + 1}/${mentions.length}] ${label}`);
+// Pending buffer for batched Supabase writes
+const pendingRows = [];   // { row, rawId }
 
-  // Skip rows with no content — nothing for Claude to analyse
-  const hasContent = [mention.title, mention.body].some(s => s?.trim());
-  if (!hasContent) {
-    console.log('  ⏭  skipped (empty title and body)');
-    skipped++;
-    continue;
-  }
+async function flushBatch() {
+  if (!pendingRows.length) return;
+  const batch = pendingRows.splice(0);
+  const rows  = batch.map(p => p.row);
+  const ids   = batch.map(p => p.rawId);
 
-  let analysis = null;
-  try {
-    analysis = await analyzePost(mention.title, mention.body, SYSTEM_PROMPT);
-  } catch (err) {
-    console.warn(`  ⚠  Claude API error: ${err.message}`);
-    failed++;
-    await sleep(DELAY_MS);
-    continue;
-  }
-
-  if (!analysis) {
-    failed++;
-    await sleep(DELAY_MS);
-    continue;
-  }
-
-  // 3a. Save to analyzed_mentions
-  const row = {
-    raw_mention_id:      mention.id,
-    brand:               mention.brand,
-    platform:            mention.platform,
-    sentiment:           analysis.sentiment          ?? null,
-    sentiment_score:     analysis.sentiment_score    ?? null,
-    emotion:             analysis.emotion            ?? null,
-    topics:              Array.isArray(analysis.topics) ? analysis.topics : [],
-    purchase_stage:      analysis.purchase_stage     ?? null,
-    complaint:           analysis.complaint          ?? null,
-    praise:              analysis.praise             ?? null,
-    competitor_mentioned:analysis.competitor_mentioned ?? null,
-    key_insight:         analysis.key_insight        ?? null,
-    confidence:          analysis.confidence         ?? null,
-  };
-
-  const { error: insertErr } = await supabase
-    .from('analyzed_mentions')
-    .insert(row);
-
+  const { error: insertErr } = await supabase.from('analyzed_mentions').insert(rows);
   if (insertErr) {
-    console.warn(`  ⚠  Supabase insert error: ${insertErr.message}`);
-    failed++;
-    await sleep(DELAY_MS);
-    continue;
+    console.warn(`  ⚠  Batch insert error: ${insertErr.message}`);
+    failed += rows.length;
+    return;
   }
 
-  // 3b. Flip analyzed = true on the raw mention
   const { error: updateErr } = await supabase
     .from('raw_mentions')
     .update({ analyzed: true })
-    .eq('id', mention.id);
+    .in('id', ids);
+  if (updateErr) console.warn(`  ⚠  Batch update error: ${updateErr.message}`);
 
-  if (updateErr) {
-    console.warn(`  ⚠  Could not mark analyzed: ${updateErr.message}`);
-  }
-
-  // 3c. Accumulate stats
-  processed++;
-  saved++;
-
-  const s = analysis.sentiment ?? 'unknown';
-  sentimentCounts[s] = (sentimentCounts[s] || 0) + 1;
-
-  const e = analysis.emotion ?? 'unknown';
-  emotionCounts[e] = (emotionCounts[e] || 0) + 1;
-
-  for (const topic of (analysis.topics ?? [])) {
-    topicCounts[topic] = (topicCounts[topic] || 0) + 1;
-  }
-
-  const noiseKeywords = ['unrelated', 'not related', 'irrelevant'];
-  const isNoise =
-    noiseKeywords.some(kw => (analysis.key_insight ?? '').toLowerCase().includes(kw)) ||
-    (!analysis.competitor_mentioned && !analysis.complaint && !analysis.praise);
-
-  if (analysis.key_insight && (analysis.confidence ?? 0) > 0 && !isNoise) {
-    topInsights.push({
-      confidence:  analysis.confidence,
-      key_insight: analysis.key_insight,
-      url:         mention.url,
-    });
-  }
-
-  console.log(`  ${analysis.sentiment} (${(analysis.sentiment_score ?? 0).toFixed(2)}) · ${analysis.emotion} · [${(analysis.topics ?? []).join(', ')}]`);
-  console.log(`  → ${analysis.key_insight}`);
-
-  await sleep(DELAY_MS);
+  saved += rows.length;
 }
+
+// 3. Analyse with CONCURRENCY workers + batched writes
+let nextIdx = 0;
+
+async function processWorker() {
+  while (true) {
+    const i = nextIdx++;
+    if (i >= mentions.length) break;
+    const mention = mentions[i];
+
+    const label = mention.title?.slice(0, 60) || mention.url?.slice(-40) || mention.id;
+    console.log(`[${i + 1}/${mentions.length}] ${label}`);
+
+    const hasContent = [mention.title, mention.body].some(s => s?.trim());
+    if (!hasContent) {
+      console.log('  ⏭  skipped (empty title and body)');
+      skipped++;
+      continue;
+    }
+
+    let analysis = null;
+    try {
+      analysis = await analyzePost(mention.title, mention.body, SYSTEM_PROMPT);
+    } catch (err) {
+      console.warn(`  ⚠  Claude API error: ${err.message}`);
+      failed++;
+      continue;
+    }
+
+    if (!analysis) { failed++; continue; }
+
+    const row = {
+      raw_mention_id:       mention.id,
+      brand:                mention.brand,
+      platform:             mention.platform,
+      sentiment:            analysis.sentiment           ?? null,
+      sentiment_score:      analysis.sentiment_score     ?? null,
+      emotion:              analysis.emotion             ?? null,
+      topics:               Array.isArray(analysis.topics) ? analysis.topics : [],
+      purchase_stage:       analysis.purchase_stage      ?? null,
+      complaint:            analysis.complaint           ?? null,
+      praise:               analysis.praise              ?? null,
+      competitor_mentioned: analysis.competitor_mentioned ?? null,
+      key_insight:          analysis.key_insight         ?? null,
+      confidence:           analysis.confidence          ?? null,
+    };
+
+    pendingRows.push({ row, rawId: mention.id });
+
+    const s = analysis.sentiment ?? 'unknown';
+    sentimentCounts[s] = (sentimentCounts[s] || 0) + 1;
+
+    const e = analysis.emotion ?? 'unknown';
+    emotionCounts[e] = (emotionCounts[e] || 0) + 1;
+
+    for (const topic of (analysis.topics ?? [])) {
+      topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+    }
+
+    const noiseKeywords = ['unrelated', 'not related', 'irrelevant'];
+    const isNoise =
+      noiseKeywords.some(kw => (analysis.key_insight ?? '').toLowerCase().includes(kw)) ||
+      (!analysis.competitor_mentioned && !analysis.complaint && !analysis.praise);
+
+    if (analysis.key_insight && (analysis.confidence ?? 0) > 0 && !isNoise) {
+      topInsights.push({ confidence: analysis.confidence, key_insight: analysis.key_insight, url: mention.url });
+    }
+
+    console.log(`  ${analysis.sentiment} (${(analysis.sentiment_score ?? 0).toFixed(2)}) · ${analysis.emotion} · [${(analysis.topics ?? []).join(', ')}]`);
+    console.log(`  → ${analysis.key_insight}`);
+
+    if (pendingRows.length >= BATCH_SIZE) await flushBatch();
+  }
+}
+
+await Promise.all(Array.from({ length: CONCURRENCY }, processWorker));
+await flushBatch();
 
 // ── Summary ────────────────────────────────────────────────────────────────
 const top5Insights = topInsights

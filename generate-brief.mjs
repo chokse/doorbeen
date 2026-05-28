@@ -45,8 +45,7 @@ if (!BRAND) {
 const BRAND_DISPLAY_NAMES = {
   thewholetruth: 'The Whole Truth',
   superyou:      'SuperYou',
-  minimalist:    'Minimalist',
-  boat:          'boAt',
+  mamaearth:     'Mamaearth',
 };
 const BRAND_NAME = BRAND_DISPLAY_NAMES[BRAND] ?? BRAND;
 
@@ -72,11 +71,16 @@ function topN(countObj, n) {
     .reduce((acc, [k, v]) => { acc[k] = v; return acc; }, {});
 }
 
-function stripFences(text) {
-  return text
+function extractJson(text) {
+  const stripped = text
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```\s*$/, '')
     .trim();
+  if (stripped.startsWith('{')) return stripped;
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start !== -1 && end > start) return text.slice(start, end + 1);
+  return stripped;
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -297,7 +301,7 @@ Return ONLY a valid JSON object with this exact structure:
     "top_mentions": [
       {
         "platform": "reddit|instagram|linkedin",
-        "quote": "the most representative consumer quote from this platform — max 2 sentences, real consumer voice, not paraphrased. Pull directly from the SOURCE POSTS content above.",
+        "quote": "VERBATIM quote copied word-for-word from the 'body' or 'title' field in SOURCE POSTS above. Never paraphrase, summarise, or rewrite. If the post has no usable verbatim text, skip this entry.",
         "doorbeen_read": "one sharp insight from this specific quote — what it means for the brand",
         "url": "the source URL for this post — must match a URL from SOURCE POSTS above"
       }
@@ -330,7 +334,7 @@ const response = await anthropic.messages.create({
 });
 
 const raw = response.content.find(b => b.type === 'text')?.text ?? '';
-const cleaned = stripFences(raw);
+const cleaned = extractJson(raw);
 
 try {
   briefJson = JSON.parse(cleaned);
@@ -352,7 +356,7 @@ try {
   });
 
   const retryRaw     = retryResponse.content.find(b => b.type === 'text')?.text ?? '';
-  const retryCleaned = stripFences(retryRaw);
+  const retryCleaned = extractJson(retryRaw);
 
   try {
     briefJson = JSON.parse(retryCleaned);

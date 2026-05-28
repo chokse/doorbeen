@@ -16,13 +16,18 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ── Brand slug from CLI ────────────────────────────────────────────────────
+// ── Brand slug + optional source flag from CLI ────────────────────────────
 const BRAND_SLUG = process.argv[2];
 if (!BRAND_SLUG) {
-  console.error('Usage: node --env-file=.env test-collect.mjs <brand-slug>');
-  console.error('Example: node --env-file=.env test-collect.mjs thewholetruth');
+  console.error('Usage: node --env-file=.env test-collect.mjs <brand-slug> [--reddit|--instagram|--linkedin]');
+  console.error('Example: node --env-file=.env test-collect.mjs mamaearth --instagram');
   process.exit(1);
 }
+
+const SOURCE_FLAG = process.argv[3]; // --reddit | --instagram | --linkedin | undefined (= all)
+const RUN_REDDIT    = !SOURCE_FLAG || SOURCE_FLAG === '--reddit';
+const RUN_INSTAGRAM = !SOURCE_FLAG || SOURCE_FLAG === '--instagram';
+const RUN_LINKEDIN  = !SOURCE_FLAG || SOURCE_FLAG === '--linkedin';
 
 // BRAND is built dynamically in main from the Supabase brands table (see Step 0)
 let BRAND;
@@ -74,28 +79,29 @@ async function collectReddit() {
   console.log(`  ${BRAND.reddit_queries.length} queries × ${BRAND.subreddits.length + 1} sources`);
   console.log('────────────────────────────────────────────────');
 
-  const raw = [];
+  const queryResults = await Promise.all(
+    BRAND.reddit_queries.map(async (query, qi) => {
+      const posts = [];
 
-  for (const [qi, query] of BRAND.reddit_queries.entries()) {
-    console.log(`\n  [${qi + 1}/${BRAND.reddit_queries.length}] ${query}`);
+      const globalUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=new&limit=25&t=month`;
+      const globalPosts = await fetchReddit(globalUrl, 'global');
+      posts.push(...globalPosts.map(p => normalizeRedditPost(p, 'global_search')));
+      console.log(`\n  [${qi + 1}/${BRAND.reddit_queries.length}] ${query}\n    global_search → ${globalPosts.length}`);
 
-    const globalUrl = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=new&limit=25&t=month`;
-    const globalPosts = await fetchReddit(globalUrl, 'global');
-    raw.push(...globalPosts.map(p => normalizeRedditPost(p, 'global_search')));
-    console.log(`    global_search → ${globalPosts.length}`);
-    await sleep(REDDIT_DELAY_MS);
-
-    if (!query.includes('subreddit:')) {
-      for (const sub of BRAND.subreddits) {
-        const subUrl = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=top&limit=10&t=month`;
-        const subPosts = await fetchReddit(subUrl, `r/${sub}`);
-        raw.push(...subPosts.map(p => normalizeRedditPost(p, sub)));
-        if (subPosts.length) console.log(`    r/${sub} → ${subPosts.length}`);
-        await sleep(REDDIT_DELAY_MS);
+      if (!query.includes('subreddit:')) {
+        for (const sub of BRAND.subreddits) {
+          const subUrl = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=top&limit=10&t=month`;
+          const subPosts = await fetchReddit(subUrl, `r/${sub}`);
+          posts.push(...subPosts.map(p => normalizeRedditPost(p, sub)));
+          if (subPosts.length) console.log(`    r/${sub} → ${subPosts.length}`);
+        }
       }
-    }
-  }
 
+      return posts;
+    })
+  );
+
+  const raw = queryResults.flat();
   const seen = new Set();
   return raw.filter(r => {
     if (seen.has(r.external_id)) return false;
@@ -187,9 +193,8 @@ async function collectInstagram() {
   try {
     console.log(`\n  [1] Profile scrape: @${BRAND.instagram_username}`);
     const posts = await runApifyActor('apify~instagram-post-scraper', {
-      directUrls:    [`https://www.instagram.com/${BRAND.instagram_username}/`],
-      resultsLimit:  20,
-      addParentData: false,
+      username:     [BRAND.instagram_username],
+      resultsLimit: 20,
     });
     results.push(...posts.map(p => normalizeInstagramPost(p, 'own_profile')));
     console.log(`    own_profile → ${posts.length} posts`);
@@ -360,9 +365,9 @@ console.log(` Started : ${new Date().toISOString()}`);
 console.log(` Apify   : ${APIFY_TOKEN ? '✓ token present' : '✗ no token (Instagram + LinkedIn will be skipped)'}`);
 console.log('═══════════════════════════════════════════════════');
 
-const redditMentions    = await collectReddit();
-const instagramMentions = await collectInstagram();
-const linkedinMentions  = await collectLinkedIn();
+const redditMentions    = RUN_REDDIT    ? await collectReddit()    : [];
+const instagramMentions = RUN_INSTAGRAM ? await collectInstagram() : [];
+const linkedinMentions  = RUN_LINKEDIN  ? await collectLinkedIn()  : [];
 
 const allMentions = [...redditMentions, ...instagramMentions, ...linkedinMentions];
 

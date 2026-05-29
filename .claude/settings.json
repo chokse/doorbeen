@@ -8,7 +8,9 @@
       "Bash(node --env-file=.env test-analyze.mjs mamaearth)",
       "Bash(node --env-file=.env generate-brief.mjs mamaearth)",
       "Bash(node --env-file=.env test-collect.mjs mamaearth)",
-      "Bash(node --env-file=.env test-collect.mjs mamaearth --instagram)"
+      "Bash(node --env-file=.env test-collect.mjs mamaearth --instagram)",
+      "Bash(node --env-file=.env generate-brief.mjs superyou)",
+      "Bash(node --env-file=.env generate-brief.mjs thewholetruth)"
     ]
   }
 }

@@ -96,8 +96,9 @@ console.log('\n── Step 1: Fetching analyzed_mentions…');
 
 const { data: mentions, error: fetchErr } = await supabase
   .from('analyzed_mentions')
-  .select('*, raw_mentions!raw_mention_id(url, title, body, score)')
-  .eq('brand', BRAND);
+  .select('*, raw_mentions!raw_mention_id(url, title, body, score, num_comments, created_at)')
+  .eq('brand', BRAND)
+  .gte('analyzed_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
 if (fetchErr) {
   console.error('Failed to fetch analyzed_mentions:', fetchErr.message);
@@ -172,6 +173,39 @@ const top3Competitors = topN(competitorCounts, 3);
 // Platform breakdown
 const platformCounts = countBy(mentions, 'platform');
 
+// Engagement-weighted, channel-weighted, recency-weighted Net Sentiment Score
+const CHANNEL_WEIGHTS = { reddit: 0.6, linkedin: 0.5, instagram: 0.7 };
+
+let weightedPositive = 0;
+let weightedNegative = 0;
+let weightedNeutral  = 0;
+let totalPosts       = 0;
+
+for (const m of mentions) {
+  if (m.sentiment_score == null) continue;
+  const raw           = m.raw_mentions;
+  const engWeight     = Math.max(0.1, Math.pow((raw?.score ?? 0) + (raw?.num_comments ?? 0) + 1, 0.3));
+  const chanWeight    = CHANNEL_WEIGHTS[(m.platform ?? '').toLowerCase()] ?? 1.0;
+  const ageDays       = raw?.created_at
+    ? (Date.now() - new Date(raw.created_at).getTime()) / (1000 * 60 * 60 * 24)
+    : 15; // default to half-life if date missing
+  const recencyWeight = Math.exp(-ageDays / 15);
+  const w             = engWeight * chanWeight * recencyWeight;
+
+  if      (m.sentiment_score >  0.05) weightedPositive += w;
+  else if (m.sentiment_score < -0.05) weightedNegative += w;
+  else                                weightedNeutral  += w;
+
+  totalPosts++;
+}
+
+const nssDenominator     = weightedPositive + weightedNegative + weightedNeutral * 0.4;
+const computedSentimentScore = nssDenominator > 0
+  ? Math.max(-1, Math.min(1, (weightedPositive - weightedNegative) / nssDenominator))
+  : 0;
+
+const confidenceScore = Math.round((1 - (1 / Math.sqrt(totalPosts))) * 100) / 100;
+
 // ── Step 2b: Top source post per platform (for real quotes + URLs) ────────────
 console.log('\n── Step 2b: Selecting top source posts per platform…');
 
@@ -227,17 +261,20 @@ top3SourcePosts.forEach(p =>
 );
 
 const aggregated = {
-  total_analyzed:        mentions.length,
-  sentiment_counts:      sentimentCounts,
-  emotion_counts:        emotionCounts,
-  purchase_stage_counts: stageCounts,
-  top_10_themes:         top10Themes,
-  top_15_key_insights:   top15Insights,
-  competitor_counts:     top3Competitors,
-  platform_counts:       platformCounts,
+  total_analyzed:           mentions.length,
+  sentiment_counts:         sentimentCounts,
+  computed_sentiment_score: computedSentimentScore,
+  confidence_score:         confidenceScore,
+  emotion_counts:           emotionCounts,
+  purchase_stage_counts:    stageCounts,
+  top_10_themes:            top10Themes,
+  top_15_key_insights:      top15Insights,
+  competitor_counts:        top3Competitors,
+  platform_counts:          platformCounts,
 };
 
 console.log('  Sentiment    :', JSON.stringify(sentimentCounts));
+console.log('  Score        :', computedSentimentScore.toFixed(4), '(engagement+channel weighted)');
 console.log('  Top 5 themes :', JSON.stringify(topN(topicCounts, 5)));
 console.log('  Signal posts :', top15Insights.length, 'insights (from', mentions.length, 'total)');
 console.log('  Competitors  :', JSON.stringify(top3Competitors));
@@ -246,44 +283,26 @@ console.log('  Platforms    :', JSON.stringify(platformCounts));
 // ── Step 3: Call Claude ───────────────────────────────────────────────────────
 console.log('\n── Step 3: Calling Claude…');
 
-const SYSTEM_PROMPT = `You are Doorbeen — a consumer intelligence analyst for Indian D2C brands. You write weekly briefs for brand heads. Your writing is sharp, direct, and strategic. You sound like a brilliant junior strategist, not a bot. No jargon, no fluff, no filler phrases like 'it is worth noting that' or 'this suggests that'.
+const SYSTEM_PROMPT = `<role>
+You are Doorbeen — a consumer intelligence analyst for Indian D2C brands. You write weekly briefs for brand heads. Your job is to surface what matters, say it sharply, and tell the brand team what to do about it.
+</role>
 
-WRITING RULES — strictly enforced:
-- No em dashes. Use a full stop or comma instead.
-- No rule of three (never 'x, y, and z' as a rhetorical pattern)
-- No significance inflation: never use 'pivotal', 'testament to', 'underscores', 'highlights', 'showcasing', 'nestled', 'vibrant'
-- No signposting: never 'Let's look at', 'Here's what', 'It's worth noting'
-- No hedging: never 'may suggest', 'could indicate', 'seems to'
-- No generic conclusions: never 'the future looks bright', 'watch this space'
+<writing_rules>
+- No em dashes. Use a full stop or a comma instead.
+- No rule of three. Never use "x, y, and z" as a rhetorical pattern.
+- No significance inflation. Never use: pivotal, testament to, underscores, highlights, showcasing, nestled, vibrant.
+- No signposting. Never use: "Let's look at", "Here's what", "It's worth noting".
+- No hedging. Never use: "may suggest", "could indicate", "seems to".
+- No generic conclusions. Never use: "the future looks bright", "watch this space".
 - Short sentences. One idea per sentence.
 - Specific over general. Name the thing. Name the place. Name the number.
-- Write like a sharp analyst who has seen the data and has a point of view. Not like a report generator.`;
+- Write like a sharp analyst who has seen the data and has a point of view. Not like a report generator.
+</writing_rules>
 
-const SOURCE_POSTS_BLOCK = top3SourcePosts.length > 0
-  ? `\nSOURCE POSTS (use these for real quotes and URLs in top_mentions):\n${JSON.stringify(top3SourcePosts, null, 2)}\n`
-  : '';
-
-const BRAND_CONTEXT_BLOCK = brandProfile?.profile_json
-  ? `BRAND CONTEXT — read this before analyzing anything:
-${JSON.stringify(brandProfile.profile_json, null, 2)}
-
-Instructions for using this context:
-1. CONTRADICTION DETECTION — when a consumer complaint directly contradicts a brand promise (e.g. 'nothing to hide' brand + packaging tampering complaint), call it out explicitly in key_insight. These are the highest-value signals.
-2. CONTROVERSY AWARENESS — you already know about known controversies. When mentions reference them, don't treat them as isolated incidents. Connect them to the broader pattern.
-3. STRATEGIC FRAMING — every insight must be framed in the context of where this brand is right now (funding stage, growth trajectory, category battles). A packaging complaint means something different for a Series B brand heading toward IPO than for a bootstrapped startup.
-4. COMPETITIVE INTELLIGENCE — use the competitor list to sharpen competitor_signal. Don't just name a competitor — explain the specific threat vector given what you know about both brands.
-5. ONE THING TO DO — must be specific to this brand's actual situation this week. Reference real events, real product names, real platform names. Never generic.
-6. TONE — write like a strategist who has been briefed on this brand, not like an analyst seeing it for the first time.
-
-`
-  : '';
-
-const USER_PROMPT = `Generate a Doorbeen brief for ${BRAND_NAME} based on this consumer data from the last 30 days.
-
-${BRAND_CONTEXT_BLOCK}DATA:
-${JSON.stringify(aggregated, null, 2)}
-${SOURCE_POSTS_BLOCK}
-Return ONLY a valid JSON object with this exact structure:
+<output_format>
+Return ONLY a valid JSON object. No preamble, no markdown, no explanation outside the JSON.
+Leave sentiment_score as 0 — it will be set programmatically after you respond. Do not try to calculate or guess it.
+The JSON structure must be exactly:
 {
   "act1": {
     "week_summary": "2-3 sentences. What is the dominant consumer story this month? Be specific, not generic.",
@@ -292,7 +311,7 @@ Return ONLY a valid JSON object with this exact structure:
     "top_praise": "one sentence — what consumers genuinely and repeatedly love",
     "competitor_signal": {
       "brand": "competitor brand name",
-      "signal": "one sentence — what the competitive signal means for ${BRAND_NAME}"
+      "signal": "one sentence — what the competitive signal means for this brand"
     },
     "one_thing_to_do": {
       "action": "specific action the brand team can take this week",
@@ -301,27 +320,62 @@ Return ONLY a valid JSON object with this exact structure:
     "top_mentions": [
       {
         "platform": "reddit|instagram|linkedin",
-        "quote": "VERBATIM quote copied word-for-word from the 'body' or 'title' field in SOURCE POSTS above. Never paraphrase, summarise, or rewrite. If the post has no usable verbatim text, skip this entry.",
+        "quote": "VERBATIM quote copied word-for-word from SOURCE POSTS. Never paraphrase or rewrite. Skip this entry if no usable verbatim text exists.",
         "doorbeen_read": "one sharp insight from this specific quote — what it means for the brand",
-        "url": "the source URL for this post — must match a URL from SOURCE POSTS above"
+        "url": "must match a URL from SOURCE POSTS"
       }
     ]
   },
   "act2": {
     "emotion_breakdown": { "excited": 0, "disappointed": 0, "skeptical": 0, "curious": 0, "satisfied": 0, "angry": 0, "neutral": 0 },
     "purchase_stage_distribution": { "awareness": 0, "consideration": 0, "trial": 0, "post_purchase": 0, "repeat": 0, "lapsed": 0, "unknown": 0 },
-    "top_insights": ["array of 5 most actionable insights, written as sharp one-liners a brand manager can act on"],
+    "top_insights": ["5 actionable insights, each a sharp one-liner a brand manager can act on"],
     "consumer_archetypes": [
       {
-        "name": "short evocative name for this persona type",
+        "name": "short evocative name",
         "description": "one sentence who this person is",
-        "size": "approximate % of conversations this archetype represents",
+        "size": "approximate % of conversations",
         "signal": "one sentence what this archetype is saying about the brand right now"
       }
     ],
-    "data_sources": { "reddit": 0, "instagram": 0, "linkedin": 0, "total": 0 }
+    "data_sources": { "reddit": 0, "instagram": 0, "linkedin": 0, "total": 0 },
+    "confidence_score": 0
   }
-}`;
+}
+</output_format>`;
+
+const SOURCE_POSTS_BLOCK = top3SourcePosts.length > 0
+  ? JSON.stringify(top3SourcePosts, null, 2)
+  : '';
+
+const BRAND_CONTEXT_BLOCK = brandProfile?.profile_json
+  ? JSON.stringify(brandProfile.profile_json, null, 2)
+  : '';
+
+const USER_PROMPT = `<task>
+Generate a Doorbeen brief for ${BRAND_NAME} based on consumer data from the last 30 days.
+</task>
+
+<brand_context>
+${BRAND_CONTEXT_BLOCK}
+
+Instructions for using brand context:
+1. CONTRADICTION DETECTION — when a consumer complaint directly contradicts a brand promise, call it out explicitly. These are the highest-value signals.
+2. CONTROVERSY AWARENESS — known controversies are in the context. When mentions reference them, connect them to the broader pattern. Do not treat them as isolated incidents.
+3. STRATEGIC FRAMING — frame every insight in the context of where this brand is right now. A packaging complaint means something different for a Series B brand heading toward IPO than for a bootstrapped startup.
+4. COMPETITIVE INTELLIGENCE — use the competitor list to sharpen competitor_signal. Name the specific threat vector.
+5. ONE THING TO DO — must reference real events, real product names, real platform names from this week. Never generic.
+6. TONE — write like a strategist who has been briefed on this brand, not like an analyst seeing it for the first time.
+</brand_context>
+
+<data>
+${JSON.stringify(aggregated, null, 2)}
+</data>
+
+<source_posts>
+${SOURCE_POSTS_BLOCK}
+Use these for verbatim quotes and URLs in top_mentions only.
+</source_posts>`;
 
 let briefJson = null;
 
@@ -367,6 +421,10 @@ try {
     process.exit(1);
   }
 }
+
+// Override Claude's sentiment_score with the deterministic computed value
+briefJson.act1.sentiment_score = Math.min(100, Math.max(0, Math.round(((computedSentimentScore * 2) + 1) * 50)));
+briefJson.act2.confidence_score = confidenceScore;
 
 // ── Step 4: Save to Supabase ──────────────────────────────────────────────────
 console.log('\n── Step 4: Saving brief to Supabase…');

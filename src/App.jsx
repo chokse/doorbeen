@@ -239,22 +239,24 @@ export default function Doorbeen() {
   const emotionTotal = act2 ? Object.values(act2.emotion_breakdown).reduce((a, b) => a + b, 0) : 0;
   const stageTotal   = act2 ? Object.values(act2.purchase_stage_distribution).reduce((a, b) => a + b, 0) : 0;
 
+  const displayScore = act1 ? act1.sentiment_score : 50;
+
   const sentimentLabel = act1
-    ? act1.sentiment_score >= 65 ? 'Positive'
-    : act1.sentiment_score >= 45 ? 'Mixed'
+    ? displayScore >= 65 ? 'Positive'
+    : displayScore >= 45 ? 'Mixed'
     : 'Needs Attention'
     : '';
 
   // Change 6: category for The Pulse sentiment block
-  const sentimentCat = act1 ? getSentimentCategory(act1.sentiment_score) : null;
+  const sentimentCat = act1 ? getSentimentCategory(displayScore) : null;
 
   // Fix 5: crisis flag — low score but more positive than negative emotions
   const positiveEmotions = (act2?.emotion_breakdown?.excited ?? 0) + (act2?.emotion_breakdown?.satisfied ?? 0);
   const negativeEmotions  = (act2?.emotion_breakdown?.angry   ?? 0) + (act2?.emotion_breakdown?.disappointed ?? 0);
-  const showCrisisFlag    = act1?.sentiment_score < 40 && positiveEmotions > negativeEmotions;
+  const showCrisisFlag    = displayScore < 40 && positiveEmotions > negativeEmotions;
   if (showCrisisFlag) {
     console.warn(
-      `[Doorbeen] Low sentiment score (${act1.sentiment_score}) for brand with more positive (${positiveEmotions}) than negative (${negativeEmotions}) emotions — score reflects crisis signals in the data, not overall mood.`
+      `[Doorbeen] Low sentiment score (${displayScore}) for brand with more positive (${positiveEmotions}) than negative (${negativeEmotions}) emotions — score reflects crisis signals in the data, not overall mood.`
     );
   }
 
@@ -661,7 +663,7 @@ export default function Doorbeen() {
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                   <div style={{ flex: 1 }}>
-                    <AnimatedBar score={act1.sentiment_score} />
+                    <AnimatedBar score={displayScore} />
                   </div>
                   {/* Change 6: sentiment category label above score */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flexShrink: 0 }}>
@@ -677,7 +679,7 @@ export default function Doorbeen() {
                       Sentiment Score
                     </div>
                     <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 28, color: 'var(--accent-warm)', lineHeight: 1 }}>
-                      {act1.sentiment_score}/100
+                      {displayScore}/100
                     </div>
                     <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'var(--text-muted)', marginTop: 4, whiteSpace: 'nowrap' }}>
                       0 = very negative · 100 = very positive

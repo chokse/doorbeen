@@ -35,9 +35,10 @@ if (!ANTHROPIC_KEY) {
 }
 
 // ── Brand from CLI arg ─────────────────────────────────────────────────────────
-const BRAND = process.argv[2];
+const BRAND    = process.argv[2];
+const DRY_RUN  = process.argv.includes('--dry-run');
 if (!BRAND) {
-  console.error('Usage: node --env-file=.env generate-brief.mjs <brand>');
+  console.error('Usage: node --env-file=.env generate-brief.mjs <brand> [--dry-run]');
   console.error('Example: node --env-file=.env generate-brief.mjs thewholetruth');
   process.exit(1);
 }
@@ -429,7 +430,11 @@ briefJson.act2.confidence_score = confidenceScore;
 // ── Step 4: Save to Supabase ──────────────────────────────────────────────────
 console.log('\n── Step 4: Saving brief to Supabase…');
 
-const { error: insertErr } = await supabase
+if (DRY_RUN) {
+  console.log('  ⚡ Dry run — skipping Supabase insert');
+}
+
+const { error: insertErr } = DRY_RUN ? { error: null } : await supabase
   .from('briefs')
   .insert({
     brand:        BRAND,

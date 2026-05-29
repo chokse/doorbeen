@@ -45,11 +45,14 @@ every pitch, every line of copy.
 ---
 
 ## What's Built
-- Doorbeen weekly brief UI (dark theme, React)
-- Two hardcoded sample briefs for SuperYou
-- Sentiment score bar, consumer tension card, competitor signal, one action card
-- Reddit data collection script (doorbeen-collectors.js)
-- Supabase schema for raw_mentions and analyzed_mentions
+- Full data pipeline: collect (Reddit, Instagram, LinkedIn) → analyze → generate brief
+- React/Vite frontend with brand selector, brief display, email capture
+- Supabase schema: brands, raw_mentions, analyzed_mentions, briefs, brand_profiles, leads
+- Pipeline scripts: test-collect.mjs, test-analyze.mjs, generate-brief.mjs, refresh-brand-profile.mjs, run-brand-pipeline.mjs
+- Weighted sentiment scoring: NSS formula, engagement weight (power function), channel weight, recency decay, confidence score
+- Prompt caching on test-analyze.mjs (Haiku model for per-post analysis, Sonnet for brief generation)
+- OG meta tags, favicon (two circles motif), Inter + Poppins typography
+- Brief prompt restructured with XML tags per Anthropic prompting best practices
 
 ---
 
@@ -99,13 +102,14 @@ every pitch, every line of copy.
 
 ---
 
-## Architecture (Planned, Not Yet Built)
-- Data collection: Reddit JSON endpoints (free, no credentials) + Apify for Instagram
-- Storage: Supabase (raw_mentions + analyzed_mentions tables) + pgvector for RAG
-- Analysis: Claude API (claude-sonnet-4-6)
-- RAG: brand memory (past briefs) + brand knowledge base (products, pricing, competitors)
-- Frontend: React/Vite on Vercel
-- Cron: Vercel cron jobs every 6 hours
+## Architecture
+- Data collection: Reddit JSON endpoints (free, no credentials) + Apify for Instagram — **BUILT**
+- Storage: Supabase (raw_mentions, analyzed_mentions, briefs, brand_profiles, leads) — **BUILT**
+- Analysis: Claude API (claude-haiku-4-5-20251001 for per-post, claude-sonnet-4-6 for brief) — **BUILT**
+- Brand profile: web research via Claude + web_search tool — **BUILT**
+- RAG: pgvector — **PLANNED**
+- Frontend: React/Vite on Vercel — **BUILT**
+- Cron: Vercel cron jobs — **PLANNED**
 
 ---
 
@@ -134,6 +138,42 @@ Always use this full schema for analysis:
 key_insight is the most important field. It must read like a sharp
 brand strategist wrote it — not a bot. It should name a specific
 tension, opportunity, or risk. Never generic.
+
+---
+
+## Sentiment Scoring — How It Works
+
+Sentiment score is computed in generate-brief.mjs using a multi-factor weighted formula:
+
+1. **ENGAGEMENT WEIGHT:** `Math.pow(score + num_comments + 1, 0.3)` — power function, min floor 0.1
+2. **CHANNEL WEIGHT:** reddit 0.6, instagram 0.7, linkedin 0.5
+3. **RECENCY WEIGHT:** `Math.exp(-ageDays / 15)` — exponential decay, 15-day half-life
+4. **NET SENTIMENT SCORE:** `(weightedPositive - weightedNegative) / (weightedPositive + weightedNegative + weightedNeutral × 0.4)`
+5. **DISPLAY SCALE:** `Math.min(100, Math.max(0, Math.round(((NSS × 2) + 1) × 50)))`
+6. **CONFIDENCE SCORE:** `1 - (1 / Math.sqrt(n))` where n = total posts analyzed
+
+Stored as -1 to 1 in Supabase. Displayed as 0-100 in frontend.
+
+Pre-post baseline (May 29 2026):
+- SuperYou: NSS 0.344 → 84/100, confidence 0.93
+- The Whole Truth: NSS 0.342 → 84/100, confidence 0.92
+- Mamaearth: NSS -0.001 → 50/100, confidence 0.96
+
+---
+
+## Pre-Post Improvement Tracking
+
+Every pipeline improvement must capture baseline metrics before and after. Use this SQL to capture baseline:
+
+```sql
+SELECT brand, COUNT(*) as total_posts, AVG(sentiment_score) as avg_sentiment,
+COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) as positive,
+COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) as negative,
+COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) as neutral
+FROM analyzed_mentions
+WHERE brand IN ('superyou', 'thewholetruth', 'mamaearth')
+GROUP BY brand;
+```
 
 ---
 
@@ -167,6 +207,8 @@ tension, opportunity, or risk. Never generic.
 ## Key Decisions Made (Do Not Revisit Without Good Reason)
 
 - Doorbeen is positioned as "AI Consumer Intelligence" not "social listening"
+- Doorbeen is not a brand track replacement — it lives between brand tracks. More recent, more fresh, unaided.
+- Doorbeen does not replace Sprinklr/Meltwater — competing with research agencies and insight decks
 - First client is SuperYou via design partner arrangement
 - Demo page has 3 live brands: SuperYou, The Whole Truth, Mamaearth — plus "Your Brand" email capture card. boAt and Minimalist dropped.
 - 10 briefs/day global cap with email waitlist for overflow
@@ -176,6 +218,9 @@ tension, opportunity, or risk. Never generic.
 - Reddit JSON endpoints (no OAuth) for MVP data collection
 - Instagram via Apify (no brand credentials needed) for MVP
 - RAG memory starts simple: store past briefs, retrieve last 4 weeks before generation
+- Sentiment scoring uses NSS (Net Sentiment Score) with engagement, channel, and recency weighting — not simple average
+- Analysis model: Haiku (cost-efficient per-post classification). Brief model: Sonnet (quality matters here)
+- Brief prompt uses XML tag structure per Anthropic prompting best practices
 
 ---
 

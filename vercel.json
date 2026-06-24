@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/HUL", "destination": "/HUL.html" },
+    { "source": "/HUL/(.*)", "destination": "/HUL.html" }
+  ]
+}

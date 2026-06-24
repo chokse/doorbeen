@@ -13,7 +13,15 @@
       "Bash(node --env-file=.env generate-brief.mjs thewholetruth)",
       "Bash(node --env-file=.env generate-brief.mjs superyou --dry-run)",
       "Bash(node --env-file=.env generate-brief.mjs thewholetruth --dry-run)",
-      "Bash(node --env-file=.env generate-brief.mjs mamaearth --dry-run)"
+      "Bash(node --env-file=.env generate-brief.mjs mamaearth --dry-run)",
+      "Read(//c/Users/aniru/Desktop/makingsimple/**)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(ls c:/Users/aniru/Desktop/)",
+      "Read(//c/Users/aniru/Desktop/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\aniru\\Desktop\\makingsimple"
     ]
   }
 }

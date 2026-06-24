@@ -164,7 +164,7 @@ export default function Doorbeen() {
       .eq('brand', selectedBrand.slug)
       .order('generated_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     // Animate through each step (800ms each)
     for (let i = 0; i < LOADING_STEPS.length; i++) {
@@ -173,8 +173,9 @@ export default function Doorbeen() {
     }
 
     // Wait for Supabase to resolve (if still pending)
-    const { data } = await fetchPromise;
+    const { data, error } = await fetchPromise;
 
+    if (error) console.error('[Doorbeen] Brief fetch error:', error);
     setBrief(data?.brief_json ?? null);
     setPeriodLabel(data?.period_label ?? 'Last 30 days');
     setLoading(false);

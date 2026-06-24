@@ -9,9 +9,9 @@ const UPGRADE_THRESHOLD = 45; // show soft nudge at this point
 
 // ── Response modes ────────────────────────────────────────────────────────────
 const MODES = {
-  precise:       { label: 'Precise',       tokens: 150, desc: 'One sharp answer' },
-  comprehensive: { label: 'Comprehensive', tokens: 300, desc: 'Answer + context' },
-  detailed:      { label: 'Detailed',      tokens: 500, desc: 'Full depth' },
+  precise:       { label: 'Precise',       tokens: 300,  desc: 'One sharp answer' },
+  comprehensive: { label: 'Comprehensive', tokens: 600,  desc: 'Answer + context' },
+  detailed:      { label: 'Detailed',      tokens: 1000, desc: 'Full depth' },
 };
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -278,8 +278,17 @@ export default function HUL() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: '#888', letterSpacing: 1 }}>{selectedStudy}</div>
-            <div style={{ fontSize: 11, color: queriesLeft <= 10 ? '#a63d2f' : '#bbb', marginTop: 2 }}>
-              {queriesLeft} {queriesLeft === 1 ? 'query' : 'queries'} remaining
+            <div style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: queriesLeft <= 10 ? '#a63d2f' : queriesLeft <= 20 ? '#c0832e' : '#1c1c1c',
+              marginTop: 2,
+              background: queriesLeft <= 10 ? '#fff0ee' : queriesLeft <= 20 ? '#fff8f0' : '#f0ede8',
+              padding: '4px 10px',
+              borderRadius: 20,
+              border: `1px solid ${queriesLeft <= 10 ? '#f0ccc8' : queriesLeft <= 20 ? '#f0e0cc' : '#e8e4de'}`,
+            }}>
+              {queriesLeft} {queriesLeft === 1 ? 'query' : 'queries'} left
             </div>
           </div>
         </div>
@@ -309,7 +318,16 @@ export default function HUL() {
         {/* Messages */}
         {messages.map((m, i) => (
           <div key={i} className={m.role === 'user' ? 'msg-user' : 'msg-ai'} style={{ whiteSpace: 'pre-wrap' }}>
-            {m.content}
+            <span dangerouslySetInnerHTML={{ __html: m.content
+              .replace(/^### (.*$)/gm, '<strong style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;display:block;margin:16px 0 6px">$1</strong>')
+              .replace(/^## (.*$)/gm, '<strong style="font-size:15px;color:#1c1c1c;display:block;margin:18px 0 8px">$1</strong>')
+              .replace(/^# (.*$)/gm, '<strong style="font-size:16px;color:#1c1c1c;display:block;margin:20px 0 8px">$1</strong>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              .replace(/^- (.*$)/gm, '<div style="padding:3px 0 3px 16px;border-left:2px solid #e8e4de;margin:4px 0">$1</div>')
+              .replace(/\n\n/g, '<br/><br/>')
+              .replace(/\n/g, '<br/>')
+            }} />
           </div>
         ))}
 

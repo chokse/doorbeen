@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { SYSTEM_PROMPT } from './studyContent.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { SYSTEM_PROMPT_PRECISE, SYSTEM_PROMPT_COMPREHENSIVE } from './studyContent.js';
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const CREDENTIALS = { username: 'huldoorbeen', password: 'msl2026' };
@@ -9,9 +9,8 @@ const UPGRADE_THRESHOLD = 45; // show soft nudge at this point
 
 // ── Response modes ────────────────────────────────────────────────────────────
 const MODES = {
-  precise:       { label: 'Precise',       tokens: 300,  desc: 'One sharp answer' },
-  comprehensive: { label: 'Comprehensive', tokens: 600,  desc: 'Answer + context' },
-  detailed:      { label: 'Detailed',      tokens: 1000, desc: 'Full depth' },
+  precise:       { label: 'Precise',       model: 'claude-haiku-4-5-20251001', tokens: 400  },
+  comprehensive: { label: 'Comprehensive', model: 'claude-sonnet-4-6',         tokens: 1200 },
 };
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -142,14 +141,13 @@ export default function HUL() {
     if (newCount >= UPGRADE_THRESHOLD) setShowUpgrade(true);
 
     try {
-      const maxTokens = MODES[mode].tokens;
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: maxTokens,
-          system: SYSTEM_PROMPT,
+          model: MODES[mode].model,
+          max_tokens: MODES[mode].tokens,
+          system: mode === 'precise' ? SYSTEM_PROMPT_PRECISE : SYSTEM_PROMPT_COMPREHENSIVE,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
@@ -291,6 +289,21 @@ export default function HUL() {
               {queriesLeft} {queriesLeft === 1 ? 'query' : 'queries'} left
             </div>
           </div>
+          <button
+            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
+            style={{
+              background: 'none',
+              border: '1px solid #e8e4de',
+              borderRadius: 6,
+              padding: '6px 12px',
+              fontSize: 11,
+              fontFamily: 'Poppins, sans-serif',
+              color: '#888',
+              cursor: 'pointer',
+            }}
+          >
+            Log out
+          </button>
         </div>
       </header>
 
@@ -317,18 +330,40 @@ export default function HUL() {
 
         {/* Messages */}
         {messages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'msg-user' : 'msg-ai'} style={{ whiteSpace: 'pre-wrap' }}>
-            <span dangerouslySetInnerHTML={{ __html: m.content
-              .replace(/^### (.*$)/gm, '<strong style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;display:block;margin:16px 0 6px">$1</strong>')
-              .replace(/^## (.*$)/gm, '<strong style="font-size:15px;color:#1c1c1c;display:block;margin:18px 0 8px">$1</strong>')
-              .replace(/^# (.*$)/gm, '<strong style="font-size:16px;color:#1c1c1c;display:block;margin:20px 0 8px">$1</strong>')
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em>$1</em>')
-              .replace(/^- (.*$)/gm, '<div style="padding:3px 0 3px 16px;border-left:2px solid #e8e4de;margin:4px 0">$1</div>')
-              .replace(/\n\n/g, '<br/><br/>')
-              .replace(/\n/g, '<br/>')
-            }} />
-          </div>
+          <React.Fragment key={i}>
+            <div className={m.role === 'user' ? 'msg-user' : 'msg-ai'} style={{ whiteSpace: 'pre-wrap' }}>
+              <span dangerouslySetInnerHTML={{ __html: m.content
+                .replace(/^### (.*$)/gm, '<strong style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;display:block;margin:16px 0 6px">$1</strong>')
+                .replace(/^## (.*$)/gm, '<strong style="font-size:15px;color:#1c1c1c;display:block;margin:18px 0 8px">$1</strong>')
+                .replace(/^# (.*$)/gm, '<strong style="font-size:16px;color:#1c1c1c;display:block;margin:20px 0 8px">$1</strong>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^- (.*$)/gm, '<div style="padding:3px 0 3px 16px;border-left:2px solid #e8e4de;margin:4px 0">$1</div>')
+                .replace(/\n\n/g, '<br/><br/>')
+                .replace(/\n/g, '<br/>')
+              }} />
+            </div>
+            {m.role === 'assistant' && (
+              <button
+                onClick={() => navigator.clipboard.writeText(m.content)}
+                style={{
+                  alignSelf: 'flex-start',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  fontSize: 11,
+                  color: '#bbb',
+                  fontFamily: 'Poppins, sans-serif',
+                  marginTop: -8,
+                }}
+                onMouseEnter={e => e.target.style.color = '#c0832e'}
+                onMouseLeave={e => e.target.style.color = '#bbb'}
+              >
+                Copy
+              </button>
+            )}
+          </React.Fragment>
         ))}
 
         {/* Loading */}
@@ -370,11 +405,10 @@ export default function HUL() {
       {/* Input area */}
       <div style={{ background: '#fff', borderTop: '1px solid #e8e4de', padding: '16px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          {/* Mode selector */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#bbb', letterSpacing: 1, textTransform: 'uppercase', marginRight: 4 }}>Response</span>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             {Object.entries(MODES).map(([key, val]) => (
-              <button key={key} className={`mode-btn${mode === key ? ' active' : ''}`} onClick={() => setMode(key)} title={val.desc}>
+              <button key={key} className={`mode-btn${mode === key ? ' active' : ''}`}
+                onClick={() => setMode(key)}>
                 {val.label}
               </button>
             ))}

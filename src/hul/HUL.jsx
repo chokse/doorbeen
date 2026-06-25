@@ -1,17 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SYSTEM_PROMPT_PRECISE, SYSTEM_PROMPT_COMPREHENSIVE } from './studyContent.js';
+import { SYSTEM_PROMPT } from './studyContent.js';
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const CREDENTIALS = { username: 'huldoorbeen', password: 'msl2026' };
 const STUDIES = ['Peri/Menopause & Longevity'];
 const QUERY_LIMIT = 50;
 const UPGRADE_THRESHOLD = 45; // show soft nudge at this point
-
-// ── Response modes ────────────────────────────────────────────────────────────
-const MODES = {
-  precise:       { label: 'Precise',       model: 'claude-haiku-4-5-20251001', tokens: 400  },
-  comprehensive: { label: 'Comprehensive', model: 'claude-sonnet-4-6',         tokens: 1200 },
-};
 
 // ── Suggested questions ───────────────────────────────────────────────────────
 const SUGGESTED = [
@@ -93,7 +87,6 @@ export default function HUL() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('comprehensive');
   const [queryCount, setQueryCount] = useState(0);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
@@ -145,9 +138,9 @@ export default function HUL() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: MODES[mode].model,
-          max_tokens: MODES[mode].tokens,
-          system: mode === 'precise' ? SYSTEM_PROMPT_PRECISE : SYSTEM_PROMPT_COMPREHENSIVE,
+          model: 'claude-sonnet-4-6',
+          max_tokens: 3000,
+          system: SYSTEM_PROMPT,
           messages: newMessages.map(m => ({ role: m.role, content: m.content })),
         }),
       });
@@ -249,9 +242,6 @@ export default function HUL() {
         body { margin: 0; background: #f8f6f2; }
         .msg-user { background: #1c1c1c; color: #f0ede8; border-radius: 16px 16px 4px 16px; padding: 14px 18px; font-size: 14px; line-height: 1.7; max-width: 75%; align-self: flex-end; }
         .msg-ai { background: #fff; border: 1px solid #e8e4de; color: #1c1c1c; border-radius: 16px 16px 16px 4px; padding: 16px 20px; font-size: 14px; line-height: 1.8; max-width: 85%; align-self: flex-start; }
-        .mode-btn { padding: 6px 14px; border-radius: 100px; font-family: Poppins, sans-serif; font-size: 12px; font-weight: 500; border: 1px solid #e8e4de; cursor: pointer; transition: all 0.15s; background: #fff; color: #666; }
-        .mode-btn.active { background: #1c1c1c; color: #fff; border-color: #1c1c1c; }
-        .mode-btn:hover:not(.active) { border-color: #c0832e; color: #c0832e; }
         .suggest-chip { padding: 8px 14px; background: #fff; border: 1px solid #e8e4de; border-radius: 100px; font-family: Poppins, sans-serif; font-size: 12px; color: #666; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
         .suggest-chip:hover { border-color: #c0832e; color: #c0832e; }
         .send-btn { width: 44px; height: 44px; border-radius: 50%; background: #1c1c1c; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
@@ -405,14 +395,6 @@ export default function HUL() {
       {/* Input area */}
       <div style={{ background: '#fff', borderTop: '1px solid #e8e4de', padding: '16px 24px' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            {Object.entries(MODES).map(([key, val]) => (
-              <button key={key} className={`mode-btn${mode === key ? ' active' : ''}`}
-                onClick={() => setMode(key)}>
-                {val.label}
-              </button>
-            ))}
-          </div>
           {/* Input row */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
             <textarea

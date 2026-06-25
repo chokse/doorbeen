@@ -275,3 +275,79 @@ Brand profile must be refreshed on the same cadence as brief generation (weekly/
 ## Auto Keyword Generation (Planned)
 
 When a new brand is onboarded, run a Claude call with brand name + category + website to auto-generate reddit_queries and linkedin_queries. Eliminates manual keyword configuration in BRANDS object in doorbeen-collectors.js.
+
+---
+
+## HUL Research Interface
+
+This is a separate module from the social listening pipeline.
+Both modules are equally important but entirely independent —
+they share the same repo and Vercel deployment but serve
+different purposes and different clients.
+
+### What it is
+A password-protected AI chat interface that allows HUL's brand
+team to explore and query the findings from a qualitative research
+study on perimenopause, menopause, and longevity conducted by
+Make Simple Labs.
+
+### Files
+- HUL.html — entry point at repo root, loaded at /HUL
+- vercel.json — routes /HUL and /HUL/* to HUL.html
+- api/chat.js — Vercel serverless function, proxies requests to
+  Anthropic API using server-side ANTHROPIC_API_KEY. Never exposes
+  the key to the browser.
+- src/hul/HUL.jsx — full chat UI: login screen with artwork
+  carousel, chat interface, query counter, copy button, logout
+- src/hul/main-hul.jsx — React entry point for the HUL page
+- src/hul/studyContent.js — complete study knowledge base
+  (63KB) plus system prompt in XML markup. Contains all
+  respondent verbatims, activity outputs, white spaces, JTBDs,
+  and brand recommendations from the study.
+
+### Access
+- URL: doorbeen.makesimple.in/HUL
+- Username: huldoorbeen
+- Password: msl2026
+- Change credentials before onboarding a new client study
+
+### Model and cost
+- Model: claude-sonnet-4-6
+- Max tokens: 3000 (ceiling only — Claude generates what it needs)
+- API key: server-side via ANTHROPIC_API_KEY in Vercel environment
+  variables (no VITE_ prefix)
+- Query limit: 50 per session. Soft nudge at 45 queries. Hard
+  limit at 50 with mailto link to hello@makesimple.in
+- Estimated cost: ~$3-5 per 50-query session
+
+### System prompt structure
+The system prompt uses XML markup with three sections:
+- `<identity>` — who the assistant is and its purpose
+- `<rules>` — behavioural guardrails including completeness
+  check, out-of-scope redirect, and language rules
+- `<study_content>` — the full knowledge base injected via
+  STUDY_CONTENT template literal
+
+### Adding a new client study
+1. Create src/{client}/ folder with studyContent.js,
+   {CLIENT}.jsx, and main-{client}.jsx
+2. Create {CLIENT}.html at repo root
+3. Add the new entry point to vite.config.js rollupOptions
+4. Add a rewrite rule to vercel.json
+5. Add api/{client}-chat.js if the new study needs a
+   separate API route
+6. Update CLAUDE.md with the new study details
+
+### api/ folder naming convention
+Use api/{client-or-feature}-{function}.js for all future routes.
+Example: api/superyou-chat.js, api/generate-brief.js
+Exception: api/chat.js is the HUL research proxy, created
+before this convention was established.
+
+### DO NOT
+- Put the Anthropic API key in a VITE_ prefixed variable —
+  it will be exposed in the browser bundle
+- Modify studyContent.js manually — regenerate from source
+  if the study content needs updating
+- Share the /HUL URL publicly — it is for authorised
+  HUL team members only

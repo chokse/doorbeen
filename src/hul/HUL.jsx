@@ -35,7 +35,7 @@ const ARTWORKS = [
     <path d="M0,300 Q75,160 150,300 T300,300 T450,300 T600,300" fill="none" stroke="#ffa86e" stroke-width="1" opacity="0.3"/>
     <path d="M0,300 Q75,240 150,300 T300,300 T450,300 T600,300" fill="none" stroke="#c0832e" stroke-width="2.5" opacity="0.7"/>
     <path d="M0,320 Q75,220 150,320 T300,320 T450,320 T600,320" fill="none" stroke="#8c492a" stroke-width="1" opacity="0.3"/>
-    <text x="300" y="540" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#c0832e" opacity="0.5" letter-spacing="4">DOORBEEN</text>
+    <text x="300" y="540" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#c0832e" opacity="0.5" letter-spacing="4">doorbeen</text>
   </svg>`,
   // Artwork 3: grid of dots
   `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
@@ -54,7 +54,7 @@ const ARTWORKS = [
     <circle cx="360" cy="300" r="140" fill="none" stroke="#ffa86e" stroke-width="1.5" opacity="0.6"/>
     <circle cx="240" cy="300" r="140" fill="#c0832e" opacity="0.04"/>
     <circle cx="360" cy="300" r="140" fill="#ffa86e" opacity="0.04"/>
-    <text x="300" y="520" text-anchor="middle" font-family="Poppins,sans-serif" font-size="13" fill="#c0832e" opacity="0.7" letter-spacing="3">DOORBEEN</text>
+    <text x="300" y="520" text-anchor="middle" font-family="Poppins,sans-serif" font-size="13" fill="#c0832e" opacity="0.7" letter-spacing="3">doorbeen</text>
     <text x="300" y="540" text-anchor="middle" font-family="Poppins,sans-serif" font-size="9" fill="#c0832e" opacity="0.4" letter-spacing="3">BY MAKE SIMPLE LABS</text>
   </svg>`,
   // Artwork 5: horizontal lines, data-like
@@ -192,17 +192,17 @@ export default function HUL() {
         <div className="hul-right" style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: '#f8f6f2' }}>
           <div style={{ width: '100%', maxWidth: 380 }}>
             <div style={{ marginBottom: 40 }}>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c', marginBottom: 4 }}>DOORBEEN</div>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c', marginBottom: 4 }}>doorbeen</div>
               <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#888', letterSpacing: 1 }}>Research Intelligence</div>
             </div>
 
-            <div style={{ marginBottom: 32 }}>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 22, color: '#1c1c1c', lineHeight: 1.3, marginBottom: 8 }}>
-                Access your study
-              </div>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 14, color: '#666', lineHeight: 1.6 }}>
-                Ask questions. Explore findings. Hear the consumer voice.
-              </div>
+            <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+              <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 16 }}>
+                <circle cx="35" cy="50" r="22" fill="none" stroke="#c0832e" stroke-width="6"/>
+                <circle cx="65" cy="50" r="22" fill="none" stroke="#ffa86e" stroke-width="6"/>
+              </svg>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c', marginBottom: 4 }}>doorbeen</div>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 11, letterSpacing: 2, color: '#c0832e' }}>by make simple labs</div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -374,7 +374,7 @@ export default function HUL() {
           <div style={{ fontSize: 13, color: '#666' }}>
             You have <strong style={{ color: '#1c1c1c' }}>{queriesLeft} queries</strong> remaining on this study.
           </div>
-          <a href="mailto:hello@makesimple.in?subject=Doorbeen%20Research%20Access" style={{ fontSize: 12, fontWeight: 600, color: '#c0832e', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" style={{ fontSize: 12, fontWeight: 600, color: '#c0832e', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Get unlimited access
           </a>
         </div>
@@ -386,7 +386,7 @@ export default function HUL() {
           <div style={{ fontSize: 13, color: '#666' }}>
             You have used all {QUERY_LIMIT} queries on this study.
           </div>
-          <a href="mailto:hello@makesimple.in?subject=Doorbeen%20Research%20Access" style={{ fontSize: 13, fontWeight: 600, color: '#a63d2f', textDecoration: 'none' }}>
+          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" style={{ fontSize: 13, fontWeight: 600, color: '#a63d2f', textDecoration: 'none' }}>
             Contact Make Simple Labs to continue
           </a>
         </div>
@@ -416,7 +416,7 @@ export default function HUL() {
             </button>
           </div>
           <div style={{ fontSize: 11, color: '#ccc', marginTop: 8, textAlign: 'center' }}>
-            Powered by Doorbeen · Make Simple Labs · Goa
+            Powered by doorbeen · Make Simple Labs · Goa
           </div>
         </div>
       </div>

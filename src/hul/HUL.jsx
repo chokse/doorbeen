@@ -127,7 +127,7 @@ export default function HUL() {
       );
       const data = await res.json();
       if (res.status === 401) {
-        setAuthError('Incorrect username, password, or study.');
+        setAuthError('We couldn\'t find an account with those details. Please check your study selection, username and password.');
         return;
       }
       if (!res.ok) {
@@ -354,38 +354,29 @@ export default function HUL() {
           <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c' }}>doorbeen</div>
           <div style={{ fontWeight: 500, fontSize: 10, letterSpacing: 2, color: '#c0832e', marginTop: 2 }}>by make simple labs</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, color: '#888', letterSpacing: 1 }}>{selectedStudy}</div>
-            <div style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: queriesLeft <= 10 ? '#a63d2f' : queriesLeft <= 20 ? '#c0832e' : '#1c1c1c',
-              marginTop: 2,
-              background: queriesLeft <= 10 ? '#fff0ee' : queriesLeft <= 20 ? '#fff8f0' : '#f0ede8',
-              padding: '4px 10px',
-              borderRadius: 20,
-              border: `1px solid ${queriesLeft <= 10 ? '#f0ccc8' : queriesLeft <= 20 ? '#f0e0cc' : '#e8e4de'}`,
-            }}>
-              {queriesLeft} {queriesLeft === 1 ? 'query' : 'queries'} left
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#1c1c1c', letterSpacing: 0.3 }}>
+            {selectedStudy}
           </div>
-          <button
-            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
-            style={{
-              background: 'none',
-              border: '1px solid #e8e4de',
-              borderRadius: 6,
-              padding: '6px 12px',
-              fontSize: 11,
-              fontFamily: 'Poppins, sans-serif',
-              color: '#888',
-              cursor: 'pointer',
-            }}
-          >
-            Log out
-          </button>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 11, color: queriesLeft <= 10 ? '#a63d2f' : '#888', marginTop: 3 }}>
+            {queriesLeft}/{QUERY_LIMIT} queries remaining
+          </div>
         </div>
+        <button
+          onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
+          style={{
+            background: 'none',
+            border: '1px solid #e8e4de',
+            borderRadius: 6,
+            padding: '6px 12px',
+            fontSize: 11,
+            fontFamily: 'Poppins, sans-serif',
+            color: '#888',
+            cursor: 'pointer',
+          }}
+        >
+          Log out
+        </button>
       </header>
 
       {/* Messages */}

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { SYSTEM_PROMPT } from './studyContent.js';
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
-const CREDENTIALS = { username: 'huldoorbeen', password: 'msl2026' };
 const STUDIES = ['Peri/Menopause & Longevity'];
 const QUERY_LIMIT = 50;
 const UPGRADE_THRESHOLD = 45; // show soft nudge at this point
@@ -117,21 +116,29 @@ export default function HUL() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Load query count from server on login
-  useEffect(() => {
-    if (!authed) return;
-    fetch(`/api/chat?username=${username}`)
-      .then(r => r.json())
-      .then(data => { if (data.queryCount !== undefined) setQueryCount(data.queryCount); })
-      .catch(() => {});
-  }, [authed]);
-
-  const handleLogin = () => {
-    if (username.trim() === CREDENTIALS.username && password === CREDENTIALS.password) {
+  const handleLogin = async () => {
+    if (!selectedStudy || !username || !password) {
+      setAuthError('Please fill in all fields.');
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/chat?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&study=${encodeURIComponent(selectedStudy)}`
+      );
+      const data = await res.json();
+      if (res.status === 401) {
+        setAuthError('Incorrect username, password, or study.');
+        return;
+      }
+      if (!res.ok) {
+        setAuthError('Something went wrong. Please try again.');
+        return;
+      }
+      setQueryCount(data.queryCount);
       setAuthed(true);
       setAuthError('');
-    } else {
-      setAuthError('Incorrect username or password.');
+    } catch {
+      setAuthError('Could not connect. Please try again.');
     }
   };
 
@@ -151,6 +158,8 @@ export default function HUL() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
+          password,
+          study: selectedStudy,
           model: 'claude-sonnet-4-6',
           max_tokens: 3000,
           system: SYSTEM_PROMPT,

@@ -1,11 +1,14 @@
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const username = req.query.username;
-    if (!username) return res.status(400).json({ error: 'Username required' });
+    const { username, password, study } = req.query;
+    if (!username || !password || !study) {
+      return res.status(400).json({ error: 'Username, password and study required' });
+    }
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    const encoded = encodeURIComponent(study);
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&select=query_count`,
+      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count,study_name`,
       {
         headers: {
           apikey: supabaseKey,
@@ -14,7 +17,13 @@ export default async function handler(req, res) {
       }
     );
     const sessions = await sessionRes.json();
-    return res.status(200).json({ queryCount: sessions[0]?.query_count ?? 0 });
+    if (!sessions || sessions.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    return res.status(200).json({
+      queryCount: sessions[0].query_count,
+      studyName: sessions[0].study_name,
+    });
   }
 
   if (req.method !== 'POST') {
@@ -28,14 +37,15 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
   if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'Supabase not configured' });
 
-  const { username, messages, system, model, max_tokens } = req.body;
+  const { username, password, study, messages, system, model, max_tokens } = req.body;
 
   if (!username) return res.status(400).json({ error: 'Username required' });
 
   try {
     // Fetch current query count
+    const encoded = study ? encodeURIComponent(study) : '';
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&select=query_count`,
+      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count`,
       {
         headers: {
           apikey: supabaseKey,

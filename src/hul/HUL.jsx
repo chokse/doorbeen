@@ -25,12 +25,6 @@ const ARTWORKS = [
     description: 'Klimt\'s meditation on the duality of existence. A richly decorated figure of Death faces a mass of sleeping humanity clinging together in life. Oil on canvas. Leopold Museum, Vienna.',
   },
   {
-    file: '/artwork/1280px-Piet_Mondrian,_1942_-_Broadway_Boogie_Woogie.jpg',
-    title: 'Broadway Boogie Woogie',
-    artist: 'Piet Mondrian, 1942–43',
-    description: 'Mondrian\'s love letter to New York — yellow grid lines pulsing with red and blue squares, mapping city streets and the syncopated rhythm of the jazz music he fell in love with on his first night in Manhattan. Oil on canvas. MoMA, New York.',
-  },
-  {
     file: '/artwork/960px-At_Eternity\'s_Gate_-_Vincent_Van_Gogh.jpg',
     title: 'At Eternity\'s Gate',
     artist: 'Vincent van Gogh, 1890',
@@ -61,12 +55,6 @@ const ARTWORKS = [
     title: 'Self-Portrait with Halo',
     artist: 'Paul Gauguin, 1889',
     description: 'Gauguin painted himself as a saint — part irony, part genuine grandiosity. The serpent and forbidden fruit signal both temptation and spiritual authority. Oil on wood. National Gallery of Art, Washington.',
-  },
-  {
-    file: '/artwork/the-promenade (1).jpg',
-    title: 'The Promenade',
-    artist: 'Marc Chagall, 1917–18',
-    description: 'Chagall holds his wife Bella\'s hand as she floats weightlessly into the sky, lifted by the sheer joy of love. One of the most exuberant paintings of the 20th century. Oil on canvas. Russian Museum, St. Petersburg.',
   },
   {
     file: '/artwork/the-scream.jpg!HD-edvard munch.jpg',
@@ -119,8 +107,8 @@ export default function HUL() {
       setTimeout(() => {
         setArtIdx(i => (i + 1) % ARTWORKS.length);
         setArtFade(true);
-      }, 400);
-    }, 4000);
+      }, 1200);
+    }, 8000);
     return () => clearInterval(timer);
   }, []);
 
@@ -207,7 +195,7 @@ export default function HUL() {
               <div key={i} className="art-fade" style={{
                 position: 'absolute', inset: 0,
                 opacity: artIdx === i ? (artFade ? 1 : 0) : 0,
-                transition: 'opacity 0.4s ease',
+                transition: 'opacity 1.2s ease',
               }}>
                 <img
                   src={art.file}

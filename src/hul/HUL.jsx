@@ -35,6 +35,7 @@ const ARTWORKS = [
     title: 'At Eternity\'s Gate',
     artist: 'Vincent van Gogh, 1890',
     description: 'Painted weeks before his death, a figure of an old man sits collapsed in grief. Van Gogh described it as an expression of the existence of God and eternity. One of his most emotionally raw works. Oil on canvas. Kröller-Müller Museum, Netherlands.',
+    objectPosition: 'top',
   },
   {
     file: '/artwork/960px-Sinaida_Jewgenjewna_Serebrjakowa_At_the_Dressing-Table_1909.jpg',
@@ -47,6 +48,7 @@ const ARTWORKS = [
     title: 'Self-Portrait Between the Clock and the Bed',
     artist: 'Edvard Munch, 1940–43',
     description: 'Painted in his late 70s, Munch stands between a grandfather clock marking time running out and his bed, the final resting place. A quiet confrontation with mortality. Oil on canvas. Munch Museum, Oslo.',
+    objectPosition: 'top',
   },
   {
     file: '/artwork/self-portrait-with-cropped-hair-1940-Frida Kahlo.jpg',
@@ -72,6 +74,20 @@ const ARTWORKS = [
     artist: 'Edvard Munch, 1893',
     description: 'The most recognisable expression of existential anxiety in art history. Munch wrote: "I sensed an infinite scream passing through nature." Tempera on cardboard. National Museum, Oslo.',
   },
+  {
+    file: '/artwork/Self Portrait with Thorn Necklace and Hummingbird, 1940, By Frida Kahlo.jpg',
+    title: 'Self-Portrait with Thorn Necklace and Hummingbird',
+    artist: 'Frida Kahlo, 1940',
+    description: 'Kahlo wears a necklace of thorns drawing blood, a dead hummingbird as pendant — in Mexican folklore, hummingbirds bring luck in love. A black cat and spider monkey flank her shoulders. Painted the same year as her divorce from Diego Rivera. Oil on canvas. Blanton Museum of Art, Austin.',
+    objectPosition: 'center',
+  },
+  {
+    file: '/artwork/Self-Portrait with Unicorn - Winslow Remedios Varo, in 1957.jpg',
+    title: 'Self-Portrait with Unicorn',
+    artist: 'Remedios Varo, c.1957',
+    description: 'The Spanish-Mexican Surrealist paints herself alongside a wild-eyed white unicorn against a deep red background of twisting trees. Varo updates the medieval unicorn tradition — part mythology, part sensuality, part self-invention. Oil on fabric panel. Private collection.',
+    objectPosition: 'center',
+  },
 ];
 
 export default function HUL() {
@@ -80,7 +96,7 @@ export default function HUL() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [selectedStudy, setSelectedStudy] = useState(STUDIES[0]);
+  const [selectedStudy, setSelectedStudy] = useState('');
 
   // Artwork carousel
   const [artIdx, setArtIdx] = useState(0);
@@ -198,7 +214,7 @@ export default function HUL() {
                   alt={art.title}
                   style={{
                     width: '100%', height: '100%',
-                    objectFit: 'cover', objectPosition: 'center',
+                    objectFit: 'cover', objectPosition: art.objectPosition || 'center',
                     display: 'block',
                   }}
                 />
@@ -258,17 +274,12 @@ export default function HUL() {
         {/* Right — login */}
         <div className="hul-right" style={{ width: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', background: '#f8f6f2' }}>
           <div style={{ width: '100%', maxWidth: 380 }}>
-            <div style={{ marginBottom: 40 }}>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c', marginBottom: 4 }}>doorbeen</div>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#888', letterSpacing: 1 }}>Research Intelligence</div>
-            </div>
-
             <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
-              <svg width="88" height="44" viewBox="0 0 88 44" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 8, display: 'block' }}>
-                <circle cx="20" cy="22" r="20" fill="#1c1c1c"/>
-                <circle cx="68" cy="22" r="20" fill="#1c1c1c"/>
+              <svg width="110" height="55" viewBox="0 0 110 55" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 12, display: 'block' }}>
+                <circle cx="25" cy="27" r="25" fill="#1c1c1c"/>
+                <circle cx="85" cy="27" r="25" fill="#1c1c1c"/>
               </svg>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: 3, color: '#1c1c1c' }}>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 26, letterSpacing: 3, color: '#1c1c1c' }}>
                 doorbeen
               </div>
               <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 10, letterSpacing: 2, color: '#c0832e' }}>

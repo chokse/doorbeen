@@ -117,6 +117,15 @@ export default function HUL() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Load query count from server on login
+  useEffect(() => {
+    if (!authed) return;
+    fetch(`/api/chat?username=${username}`)
+      .then(r => r.json())
+      .then(data => { if (data.queryCount !== undefined) setQueryCount(data.queryCount); })
+      .catch(() => {});
+  }, [authed]);
+
   const handleLogin = () => {
     if (username.trim() === CREDENTIALS.username && password === CREDENTIALS.password) {
       setAuthed(true);
@@ -136,15 +145,12 @@ export default function HUL() {
     setMessages(newMessages);
     setLoading(true);
 
-    const newCount = queryCount + 1;
-    setQueryCount(newCount);
-    if (newCount >= UPGRADE_THRESHOLD) setShowUpgrade(true);
-
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          username,
           model: 'claude-sonnet-4-6',
           max_tokens: 3000,
           system: SYSTEM_PROMPT,
@@ -153,6 +159,11 @@ export default function HUL() {
       });
 
       const data = await response.json();
+      if (data.queryCount !== undefined) {
+        setQueryCount(data.queryCount);
+        if (data.queryCount >= UPGRADE_THRESHOLD) setShowUpgrade(true);
+        if (data.queryCount >= QUERY_LIMIT) setShowUpgrade(true);
+      }
       const reply = data.content?.[0]?.text || 'Something went wrong. Please try again.';
       setMessages([...newMessages, { role: 'assistant', content: reply }]);
     } catch {

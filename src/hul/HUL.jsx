@@ -18,57 +18,60 @@ const SUGGESTED = [
 
 // ── Placeholder artworks (SVG, using Doorbeen design system) ─────────────────
 const ARTWORKS = [
-  // Artwork 1: concentric circles
-  `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="600" height="600" fill="#2a2520"/>
-    <circle cx="300" cy="300" r="240" fill="none" stroke="#c0832e" stroke-width="1" opacity="0.3"/>
-    <circle cx="300" cy="300" r="180" fill="none" stroke="#c0832e" stroke-width="1" opacity="0.5"/>
-    <circle cx="300" cy="300" r="120" fill="none" stroke="#ffa86e" stroke-width="1.5" opacity="0.6"/>
-    <circle cx="300" cy="300" r="60" fill="none" stroke="#ffa86e" stroke-width="2" opacity="0.8"/>
-    <circle cx="300" cy="300" r="12" fill="#c0832e" opacity="0.9"/>
-    <text x="300" y="520" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#c0832e" opacity="0.6" letter-spacing="4">MAKE SIMPLE LABS</text>
-  </svg>`,
-  // Artwork 2: waveform
-  `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="600" height="600" fill="#1c1c1c"/>
-    <path d="M0,300 Q75,200 150,300 T300,300 T450,300 T600,300" fill="none" stroke="#c0832e" stroke-width="1.5" opacity="0.4"/>
-    <path d="M0,300 Q75,160 150,300 T300,300 T450,300 T600,300" fill="none" stroke="#ffa86e" stroke-width="1" opacity="0.3"/>
-    <path d="M0,300 Q75,240 150,300 T300,300 T450,300 T600,300" fill="none" stroke="#c0832e" stroke-width="2.5" opacity="0.7"/>
-    <path d="M0,320 Q75,220 150,320 T300,320 T450,320 T600,320" fill="none" stroke="#8c492a" stroke-width="1" opacity="0.3"/>
-    <text x="300" y="540" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#c0832e" opacity="0.5" letter-spacing="4">doorbeen</text>
-  </svg>`,
-  // Artwork 3: grid of dots
-  `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="600" height="600" fill="#2a2520"/>
-    ${Array.from({length: 10}, (_, i) =>
-      Array.from({length: 10}, (_, j) =>
-        `<circle cx="${60 + i*50}" cy="${60 + j*50}" r="${(i+j) % 3 === 0 ? 4 : 2}" fill="#c0832e" opacity="${0.2 + ((i*j) % 5) * 0.12}"/>`
-      ).join('')
-    ).join('')}
-    <text x="300" y="560" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#ffa86e" opacity="0.5" letter-spacing="4">2026</text>
-  </svg>`,
-  // Artwork 4: two overlapping circles (Doorbeen motif)
-  `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="600" height="600" fill="#1c1c1c"/>
-    <circle cx="240" cy="300" r="140" fill="none" stroke="#c0832e" stroke-width="1.5" opacity="0.6"/>
-    <circle cx="360" cy="300" r="140" fill="none" stroke="#ffa86e" stroke-width="1.5" opacity="0.6"/>
-    <circle cx="240" cy="300" r="140" fill="#c0832e" opacity="0.04"/>
-    <circle cx="360" cy="300" r="140" fill="#ffa86e" opacity="0.04"/>
-    <text x="300" y="520" text-anchor="middle" font-family="Poppins,sans-serif" font-size="13" fill="#c0832e" opacity="0.7" letter-spacing="3">doorbeen</text>
-    <text x="300" y="540" text-anchor="middle" font-family="Poppins,sans-serif" font-size="9" fill="#c0832e" opacity="0.4" letter-spacing="3">BY MAKE SIMPLE LABS</text>
-  </svg>`,
-  // Artwork 5: horizontal lines, data-like
-  `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-    <rect width="600" height="600" fill="#2a2520"/>
-    ${Array.from({length: 20}, (_, i) => {
-      const y = 80 + i * 22;
-      const w = 80 + ((i * 37) % 320);
-      const op = 0.15 + (i % 4) * 0.12;
-      const color = i % 3 === 0 ? '#ffa86e' : '#c0832e';
-      return `<rect x="80" y="${y}" width="${w}" height="3" rx="2" fill="${color}" opacity="${op}"/>`;
-    }).join('')}
-    <text x="300" y="560" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" fill="#c0832e" opacity="0.5" letter-spacing="4">CONSUMER INTELLIGENCE</text>
-  </svg>`,
+  {
+    file: '/artwork/1280px-Gustav_Klimt_-_Death_and_Life_(First_Version)_-_1910-11.jpg',
+    title: 'Death and Life',
+    artist: 'Gustav Klimt, 1910–15',
+    description: 'Klimt\'s meditation on the duality of existence. A richly decorated figure of Death faces a mass of sleeping humanity clinging together in life. Oil on canvas. Leopold Museum, Vienna.',
+  },
+  {
+    file: '/artwork/1280px-Piet_Mondrian,_1942_-_Broadway_Boogie_Woogie.jpg',
+    title: 'Broadway Boogie Woogie',
+    artist: 'Piet Mondrian, 1942–43',
+    description: 'Mondrian\'s love letter to New York — yellow grid lines pulsing with red and blue squares, mapping city streets and the syncopated rhythm of the jazz music he fell in love with on his first night in Manhattan. Oil on canvas. MoMA, New York.',
+  },
+  {
+    file: '/artwork/960px-At_Eternity\'s_Gate_-_Vincent_Van_Gogh.jpg',
+    title: 'At Eternity\'s Gate',
+    artist: 'Vincent van Gogh, 1890',
+    description: 'Painted weeks before his death, a figure of an old man sits collapsed in grief. Van Gogh described it as an expression of the existence of God and eternity. One of his most emotionally raw works. Oil on canvas. Kröller-Müller Museum, Netherlands.',
+  },
+  {
+    file: '/artwork/960px-Sinaida_Jewgenjewna_Serebrjakowa_At_the_Dressing-Table_1909.jpg',
+    title: 'At the Dressing Table',
+    artist: 'Zinaida Serebriakova, 1909',
+    description: 'The artist catches her own reflection mid-morning, radiating unselfconscious joy. One of the most celebrated self-portraits in Russian art. Oil on canvas. Tretyakov Gallery, Moscow.',
+  },
+  {
+    file: '/artwork/self-portrait-between-the-clock-and-the-bed-1943-edvard-munc.jpg',
+    title: 'Self-Portrait Between the Clock and the Bed',
+    artist: 'Edvard Munch, 1940–43',
+    description: 'Painted in his late 70s, Munch stands between a grandfather clock marking time running out and his bed, the final resting place. A quiet confrontation with mortality. Oil on canvas. Munch Museum, Oslo.',
+  },
+  {
+    file: '/artwork/self-portrait-with-cropped-hair-1940-Frida Kahlo.jpg',
+    title: 'Self-Portrait with Cropped Hair',
+    artist: 'Frida Kahlo, 1940',
+    description: 'Painted after her divorce from Diego Rivera, Kahlo sits in an oversized man\'s suit, her famous hair shorn and scattered around her. The text above reads: "Look, if I loved you, it was for your hair. Now that you\'re bald, I don\'t love you anymore." Oil on canvas. MoMA, New York.',
+  },
+  {
+    file: '/artwork/self-portrait-with-halo-1889-paul-gauguin.jpg',
+    title: 'Self-Portrait with Halo',
+    artist: 'Paul Gauguin, 1889',
+    description: 'Gauguin painted himself as a saint — part irony, part genuine grandiosity. The serpent and forbidden fruit signal both temptation and spiritual authority. Oil on wood. National Gallery of Art, Washington.',
+  },
+  {
+    file: '/artwork/the-promenade (1).jpg',
+    title: 'The Promenade',
+    artist: 'Marc Chagall, 1917–18',
+    description: 'Chagall holds his wife Bella\'s hand as she floats weightlessly into the sky, lifted by the sheer joy of love. One of the most exuberant paintings of the 20th century. Oil on canvas. Russian Museum, St. Petersburg.',
+  },
+  {
+    file: '/artwork/the-scream.jpg!HD-edvard munch.jpg',
+    title: 'The Scream',
+    artist: 'Edvard Munch, 1893',
+    description: 'The most recognisable expression of existential anxiety in art history. Munch wrote: "I sensed an infinite scream passing through nature." Tempera on cardboard. National Museum, Oslo.',
+  },
 ];
 
 export default function HUL() {
@@ -174,17 +177,81 @@ export default function HUL() {
           .hul-btn { width: 100%; padding: 14px; background: #1c1c1c; color: #fff; border: none; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
           .hul-btn:hover { background: #2a2520; }
           .art-fade { transition: opacity 0.4s ease; }
+          .placard-wrap:hover .placard-expanded { display: block !important; }
+          .placard-wrap:hover .placard-collapsed { border-radius: 6px 6px 0 0; }
           select.hul-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
           @media (max-width: 700px) { .hul-left { display: none !important; } .hul-right { width: 100% !important; } }
         `}</style>
 
         {/* Left — artwork */}
         <div className="hul-left" style={{ width: '50%', background: '#2a2520', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="art-fade" style={{ opacity: artFade ? 1 : 0, width: '80%', maxWidth: 420 }}
-            dangerouslySetInnerHTML={{ __html: ARTWORKS[artIdx] }} />
+          <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+
+            {ARTWORKS.map((art, i) => (
+              <div key={i} className="art-fade" style={{
+                position: 'absolute', inset: 0,
+                opacity: artIdx === i ? (artFade ? 1 : 0) : 0,
+                transition: 'opacity 0.4s ease',
+              }}>
+                <img
+                  src={art.file}
+                  alt={art.title}
+                  style={{
+                    width: '100%', height: '100%',
+                    objectFit: 'cover', objectPosition: 'center',
+                    display: 'block',
+                  }}
+                />
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 40%, transparent 100%)',
+                }}/>
+              </div>
+            ))}
+
+            {/* Artwork placard - bottom left */}
+            <div className="placard-wrap" style={{
+              position: 'absolute', bottom: 80, left: 24,
+              zIndex: 10,
+            }}>
+              <div className="placard-collapsed" style={{
+                background: 'rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(8px)',
+                borderRadius: 6,
+                padding: '8px 12px',
+                cursor: 'default',
+              }}>
+                <div style={{ fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 600, fontSize: 11, color: '#f0ede8',
+                  letterSpacing: 0.5 }}>
+                  {ARTWORKS[artIdx]?.title}
+                </div>
+                <div style={{ fontFamily: 'Poppins, sans-serif',
+                  fontWeight: 400, fontSize: 10, color: '#c0c0c0',
+                  marginTop: 2 }}>
+                  {ARTWORKS[artIdx]?.artist}
+                </div>
+              </div>
+              <div className="placard-expanded" style={{
+                background: 'rgba(0,0,0,0.75)',
+                backdropFilter: 'blur(8px)',
+                borderRadius: 6,
+                padding: '12px 14px',
+                marginTop: 6,
+                maxWidth: 260,
+                display: 'none',
+              }}>
+                <div style={{ fontFamily: 'Poppins, sans-serif',
+                  fontSize: 10, color: '#d0d0d0', lineHeight: 1.6 }}>
+                  {ARTWORKS[artIdx]?.description}
+                </div>
+              </div>
+            </div>
+
+          </div>
           <div style={{ position: 'absolute', bottom: 32, left: 0, right: 0, textAlign: 'center' }}>
             <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#f0ede8', opacity: 0.9 }}>doorbeen</div>
-            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 10, letterSpacing: 2, color: '#c0832e', marginTop: 4 }}>by make simple labs</div>
+            <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 500, fontSize: 9, letterSpacing: 2, color: '#c0832e', marginTop: 4 }}>by make simple labs</div>
           </div>
         </div>
 
@@ -196,19 +263,24 @@ export default function HUL() {
               <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 13, color: '#888', letterSpacing: 1 }}>Research Intelligence</div>
             </div>
 
-            <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-              <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 16 }}>
-                <circle cx="35" cy="50" r="22" fill="none" stroke="#c0832e" stroke-width="6"/>
-                <circle cx="65" cy="50" r="22" fill="none" stroke="#ffa86e" stroke-width="6"/>
+            <div style={{ marginBottom: 32, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+              <svg width="88" height="44" viewBox="0 0 88 44" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: 8, display: 'block' }}>
+                <circle cx="20" cy="22" r="20" fill="#1c1c1c"/>
+                <circle cx="68" cy="22" r="20" fill="#1c1c1c"/>
               </svg>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c', marginBottom: 4 }}>doorbeen</div>
-              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 11, letterSpacing: 2, color: '#c0832e' }}>by make simple labs</div>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 20, letterSpacing: 3, color: '#1c1c1c' }}>
+                doorbeen
+              </div>
+              <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 400, fontSize: 10, letterSpacing: 2, color: '#c0832e' }}>
+                by make simple labs
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Study</label>
                 <select className="hul-input" value={selectedStudy} onChange={e => setSelectedStudy(e.target.value)}>
+                  <option value="" disabled>choose study</option>
                   {STUDIES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
@@ -221,7 +293,7 @@ export default function HUL() {
                 <input className="hul-input" type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} placeholder="enter password" />
               </div>
               {authError && <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 13, color: '#a63d2f' }}>{authError}</div>}
-              <button className="hul-btn" onClick={handleLogin}>Enter</button>
+              <button className="hul-btn" onClick={handleLogin}>Log In</button>
             </div>
 
             <div style={{ marginTop: 40, fontFamily: 'Poppins, sans-serif', fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>

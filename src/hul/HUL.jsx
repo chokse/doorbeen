@@ -116,6 +116,17 @@ export default function HUL() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Counter flip animation
+  useEffect(() => {
+    if (displayCount === queriesLeft) return;
+    setAnimating(true);
+    const timer = setTimeout(() => {
+      setDisplayCount(queriesLeft);
+      setAnimating(false);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [queriesLeft]);
+
   const handleLogin = async () => {
     if (!selectedStudy || !username || !password) {
       setAuthError('Please fill in all fields.');
@@ -188,6 +199,8 @@ export default function HUL() {
   };
 
   const queriesLeft = QUERY_LIMIT - queryCount;
+  const [displayCount, setDisplayCount] = useState(queriesLeft);
+  const [animating, setAnimating] = useState(false);
 
   // ── LOGIN SCREEN ────────────────────────────────────────────────────────────
   if (!authed) {
@@ -346,6 +359,13 @@ export default function HUL() {
         @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
         .upgrade-bar { background: #fff8f0; border-top: 1px solid #f0e0cc; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
         @media (max-width: 600px) { .msg-user, .msg-ai { max-width: 95%; } .chat-area { padding: 16px !important; } }
+        .counter-box { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #e8e4de; border-radius: 8px; background: #fff; font-family: Poppins, sans-serif; font-size: 12px; color: #888; }
+        .counter-number { position: relative; overflow: hidden; height: 18px; width: 24px; display: inline-block; }
+        .counter-digit { position: absolute; width: 100%; text-align: center; font-weight: 700; font-size: 13px; font-family: 'JetBrains Mono', monospace; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease; }
+        .counter-digit.current { transform: translateY(0); opacity: 1; }
+        .counter-digit.exit { transform: translateY(-100%); opacity: 0; }
+        .counter-digit.enter { transform: translateY(100%); opacity: 0; }
+        .counter-digit.enter-active { transform: translateY(0); opacity: 1; }
       `}</style>
 
       {/* Header */}
@@ -358,12 +378,29 @@ export default function HUL() {
           <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#1c1c1c', letterSpacing: 0.3 }}>
             {selectedStudy}
           </div>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 11, color: queriesLeft <= 10 ? '#a63d2f' : '#888', marginTop: 3 }}>
-            {queriesLeft}/{QUERY_LIMIT} queries remaining
-          </div>
         </div>
-        <button
-          onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="counter-box" style={{
+            borderColor: queriesLeft <= 10 ? '#f0ccc8' : '#e8e4de',
+            background: queriesLeft <= 10 ? '#fff0ee' : '#fff',
+          }}>
+            <span style={{ fontSize: 11, color: '#aaa' }}>queries</span>
+            <div className="counter-number">
+              <span className={`counter-digit ${animating ? 'exit' : 'current'}`}
+                style={{ color: queriesLeft <= 10 ? '#a63d2f' : '#1c1c1c' }}>
+                {animating ? displayCount : queriesLeft}
+              </span>
+              {animating && (
+                <span className="counter-digit enter-active"
+                  style={{ color: queriesLeft <= 10 ? '#a63d2f' : '#1c1c1c' }}>
+                  {queriesLeft}
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: '#aaa' }}>/ {QUERY_LIMIT}</span>
+          </div>
+          <button
+            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
           style={{
             background: 'none',
             border: '1px solid #e8e4de',
@@ -376,7 +413,8 @@ export default function HUL() {
           }}
         >
           Log out
-        </button>
+          </button>
+        </div>
       </header>
 
       {/* Messages */}

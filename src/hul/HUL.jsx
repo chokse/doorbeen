@@ -359,13 +359,9 @@ export default function HUL() {
         @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
         .upgrade-bar { background: #fff8f0; border-top: 1px solid #f0e0cc; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
         @media (max-width: 600px) { .msg-user, .msg-ai { max-width: 95%; } .chat-area { padding: 16px !important; } }
-        .counter-box { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #e8e4de; border-radius: 8px; background: #fff; font-family: Poppins, sans-serif; font-size: 12px; color: #888; }
-        .counter-number { position: relative; overflow: hidden; height: 18px; width: 24px; display: inline-block; }
-        .counter-digit { position: absolute; width: 100%; text-align: center; font-weight: 700; font-size: 13px; font-family: 'JetBrains Mono', monospace; transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease; }
-        .counter-digit.current { transform: translateY(0); opacity: 1; }
-        .counter-digit.exit { transform: translateY(-100%); opacity: 0; }
-        .counter-digit.enter { transform: translateY(100%); opacity: 0; }
-        .counter-digit.enter-active { transform: translateY(0); opacity: 1; }
+        .full-report-btn { transition: background 0.15s, opacity 0.1s; }
+        .full-report-btn:hover { background: rgba(200, 194, 187, 0.08) !important; cursor: pointer; }
+        .full-report-btn:active { opacity: 0.7; }
       `}</style>
 
       {/* Header */}
@@ -374,8 +370,8 @@ export default function HUL() {
           <div style={{ fontWeight: 700, fontSize: 13, letterSpacing: 3, color: '#1c1c1c' }}>doorbeen</div>
           <div style={{ fontWeight: 500, fontSize: 10, letterSpacing: 2, color: '#c0832e', marginTop: 2 }}>by make simple labs</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#1c1c1c', letterSpacing: 0.3 }}>
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
+          <div style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: 15, color: '#1c1c1c', letterSpacing: 0.3, whiteSpace: 'nowrap' }}>
             {selectedStudy}
           </div>
         </div>
@@ -383,18 +379,19 @@ export default function HUL() {
           <a
             href="/HUL-report.pdf"
             download
+            className="full-report-btn"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
               padding: '6px 12px',
-              border: '1px solid #e8e4de',
+              border: '1px solid #b8b2ab',
               borderRadius: 6,
               background: 'none',
               fontSize: 11,
               fontFamily: 'Poppins, sans-serif',
-              fontWeight: 500,
-              color: '#888',
+              fontWeight: 600,
+              color: '#3d3a35',
               textDecoration: 'none',
               whiteSpace: 'nowrap',
             }}
@@ -406,38 +403,30 @@ export default function HUL() {
             </svg>
             Full Report
           </a>
-          <div className="counter-box" style={{
-            borderColor: queriesLeft <= 10 ? '#f0ccc8' : '#e8e4de',
-            background: queriesLeft <= 10 ? '#fff0ee' : '#fff',
-          }}>
-            <div className="counter-number">
-              <span className={`counter-digit ${animating ? 'exit' : 'current'}`}
-                style={{ color: queriesLeft <= 10 ? '#a63d2f' : '#1c1c1c' }}>
-                {animating ? displayCount : queriesLeft}
-              </span>
-              {animating && (
-                <span className="counter-digit enter-active"
-                  style={{ color: queriesLeft <= 10 ? '#a63d2f' : '#1c1c1c' }}>
-                  {queriesLeft}
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 11, color: '#aaa' }}>queries remaining</span>
-          </div>
-          <button
-            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
-          style={{
-            background: 'none',
-            border: '1px solid #e8e4de',
-            borderRadius: 6,
-            padding: '6px 12px',
+          <span style={{
             fontSize: 11,
             fontFamily: 'Poppins, sans-serif',
-            color: '#888',
-            cursor: 'pointer',
-          }}
-        >
-          Log out
+            fontWeight: 500,
+            color: queriesLeft <= 10 ? '#a63d2f' : '#3d3a35',
+            whiteSpace: 'nowrap',
+          }}>
+            {queriesLeft} / {QUERY_LIMIT} queries remaining
+          </span>
+          <button
+            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
+            style={{
+              background: 'none',
+              border: '1px solid #e8e4de',
+              borderRadius: 6,
+              padding: '6px 12px',
+              fontSize: 11,
+              fontFamily: 'Poppins, sans-serif',
+              color: '#c0bbb5',
+              cursor: 'pointer',
+              opacity: 0.7,
+            }}
+          >
+            Log out
           </button>
         </div>
       </header>

@@ -217,6 +217,7 @@ export default function HUL() {
           .placard-wrap:hover .placard-expanded { display: block !important; }
           .placard-wrap:hover .placard-collapsed { border-radius: 6px 6px 0 0; }
           select.hul-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+          select.hul-input option { color: #1c1c1c; }
           @media (max-width: 700px) { .hul-left { display: none !important; } .hul-right { width: 100% !important; } }
         `}</style>
 
@@ -311,7 +312,7 @@ export default function HUL() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontFamily: 'Poppins, sans-serif', fontSize: 12, fontWeight: 600, color: '#888', letterSpacing: 1, marginBottom: 6, textTransform: 'uppercase' }}>Study</label>
-                <select className="hul-input" value={selectedStudy} onChange={e => setSelectedStudy(e.target.value)}>
+                <select className="hul-input" value={selectedStudy} onChange={e => setSelectedStudy(e.target.value)} style={{ color: selectedStudy ? '#1c1c1c' : '#aaa' }}>
                   <option value="" disabled>choose study</option>
                   {STUDIES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>

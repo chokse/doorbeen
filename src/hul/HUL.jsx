@@ -380,11 +380,36 @@ export default function HUL() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <a
+            href="/HUL-report.pdf"
+            download
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '6px 12px',
+              border: '1px solid #e8e4de',
+              borderRadius: 6,
+              background: 'none',
+              fontSize: 11,
+              fontFamily: 'Poppins, sans-serif',
+              fontWeight: 500,
+              color: '#888',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="6" y1="1" x2="6" y2="8"/>
+              <polyline points="3,5.5 6,8.5 9,5.5"/>
+              <line x1="1" y1="11" x2="11" y2="11"/>
+            </svg>
+            Full Report
+          </a>
           <div className="counter-box" style={{
             borderColor: queriesLeft <= 10 ? '#f0ccc8' : '#e8e4de',
             background: queriesLeft <= 10 ? '#fff0ee' : '#fff',
           }}>
-            <span style={{ fontSize: 11, color: '#aaa' }}>queries</span>
             <div className="counter-number">
               <span className={`counter-digit ${animating ? 'exit' : 'current'}`}
                 style={{ color: queriesLeft <= 10 ? '#a63d2f' : '#1c1c1c' }}>
@@ -397,7 +422,7 @@ export default function HUL() {
                 </span>
               )}
             </div>
-            <span style={{ fontSize: 11, color: '#aaa' }}>/ {QUERY_LIMIT}</span>
+            <span style={{ fontSize: 11, color: '#aaa' }}>queries remaining</span>
           </div>
           <button
             onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}

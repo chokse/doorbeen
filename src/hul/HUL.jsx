@@ -99,6 +99,10 @@ export default function HUL() {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const queriesLeft = QUERY_LIMIT - queryCount;
+  const [displayCount, setDisplayCount] = useState(queriesLeft);
+  const [animating, setAnimating] = useState(false);
+
   // Artwork rotation
   useEffect(() => {
     const timer = setInterval(() => {
@@ -197,10 +201,6 @@ export default function HUL() {
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
-
-  const queriesLeft = QUERY_LIMIT - queryCount;
-  const [displayCount, setDisplayCount] = useState(queriesLeft);
-  const [animating, setAnimating] = useState(false);
 
   // ── LOGIN SCREEN ────────────────────────────────────────────────────────────
   if (!authed) {

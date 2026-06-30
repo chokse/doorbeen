@@ -83,6 +83,7 @@ export default function HUL() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [selectedStudy, setSelectedStudy] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // Artwork carousel
   const [artIdx, setArtIdx] = useState(0);
@@ -179,6 +180,8 @@ export default function HUL() {
       setAuthError('Please fill in all fields.');
       return;
     }
+    setLoginLoading(true);
+    setAuthError('');
     try {
       const res = await fetch(
         `/api/chat?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&study=${encodeURIComponent(selectedStudy)}`
@@ -199,6 +202,8 @@ export default function HUL() {
       setAuthError('');
     } catch {
       setAuthError('Could not connect. Please try again.');
+    } finally {
+      setLoginLoading(false);
     }
   };
 
@@ -256,8 +261,11 @@ export default function HUL() {
           body { margin: 0; background: #f8f6f2; }
           .hul-input { width: 100%; padding: 12px 16px; border: 1px solid #e8e4de; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 14px; background: #fff; color: #1c1c1c; transition: border-color 0.2s; outline: none; }
           .hul-input:focus { border-color: #c0832e; }
-          .hul-btn { width: 100%; padding: 14px; background: #1c1c1c; color: #fff; border: none; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-          .hul-btn:hover { background: #2a2520; }
+          .hul-btn { width: 100%; padding: 14px; background: #1c1c1c; color: #fff; border: none; border-radius: 8px; font-family: Poppins, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s, opacity 0.1s; }
+          .hul-btn:hover:not(:disabled) { background: #2a2520; }
+          .hul-btn:active:not(:disabled) { opacity: 0.82; }
+          .hul-btn:disabled { background: #888; cursor: not-allowed; opacity: 0.75; }
+          .hul-link:hover { text-decoration: underline; }
           .art-fade { transition: opacity 0.4s ease; }
           .placard-wrap:hover .placard-expanded { display: block !important; }
           .placard-wrap:hover .placard-collapsed { border-radius: 6px 6px 0 0; }
@@ -371,12 +379,14 @@ export default function HUL() {
                 <input className="hul-input" type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} placeholder="enter password" />
               </div>
               {authError && <div style={{ fontFamily: 'Poppins, sans-serif', fontSize: 13, color: '#a63d2f' }}>{authError}</div>}
-              <button className="hul-btn" onClick={handleLogin}>Log In</button>
+              <button className="hul-btn" onClick={handleLogin} disabled={loginLoading}>
+                {loginLoading ? 'Logging in…' : 'Log In'}
+              </button>
             </div>
 
             <div style={{ marginTop: 40, fontFamily: 'Poppins, sans-serif', fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>
               Access is restricted to authorised team members.<br />
-              Questions? <a href="mailto:hello@makesimple.in" style={{ color: '#c0832e', textDecoration: 'none' }}>hello@makesimple.in</a>
+              Questions? <a href="mailto:hello@makesimple.in" className="hul-link" style={{ color: '#c0832e', textDecoration: 'none' }}>hello@makesimple.in</a>
             </div>
           </div>
         </div>
@@ -394,8 +404,10 @@ export default function HUL() {
         .msg-ai { background: #fff; border: 1px solid #e8e4de; color: #1c1c1c; border-radius: 16px 16px 16px 4px; padding: 16px 20px; font-size: 14px; line-height: 1.8; max-width: 85%; align-self: flex-start; }
         .suggest-chip { padding: 8px 14px; background: #fff; border: 1px solid #e8e4de; border-radius: 100px; font-family: Poppins, sans-serif; font-size: 12px; color: #666; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
         .suggest-chip:hover { border-color: #c0832e; color: #c0832e; }
-        .send-btn { width: 44px; height: 44px; border-radius: 50%; background: #1c1c1c; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
-        .send-btn:hover { background: #c0832e; }
+        .suggest-chip:active { opacity: 0.75; }
+        .send-btn { width: 44px; height: 44px; border-radius: 50%; background: #1c1c1c; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, opacity 0.1s; }
+        .send-btn:hover:not(:disabled) { background: #c0832e; }
+        .send-btn:active:not(:disabled) { opacity: 0.78; }
         .send-btn:disabled { background: #e8e4de; cursor: default; }
         .chat-input { flex: 1; padding: 12px 16px; border: 1px solid #e8e4de; border-radius: 24px; font-family: Poppins, sans-serif; font-size: 14px; background: #fff; color: #1c1c1c; outline: none; resize: none; transition: border-color 0.2s; line-height: 1.5; }
         .chat-input:focus { border-color: #c0832e; }
@@ -404,8 +416,11 @@ export default function HUL() {
         .dot:nth-child(3) { animation-delay: 0.3s; }
         @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
         .upgrade-bar { background: #fff8f0; border-top: 1px solid #f0e0cc; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-        .copy-btn { transition: color 0.15s, background 0.1s; border-radius: 4px; }
+        .copy-btn { transition: color 0.15s, background 0.1s, opacity 0.1s; border-radius: 4px; }
         .copy-btn:hover { color: #c0832e !important; background: rgba(192, 131, 46, 0.06); }
+        .copy-btn:active { opacity: 0.65; }
+        .upgrade-link { transition: opacity 0.1s; }
+        .upgrade-link:hover { opacity: 0.75; text-decoration: underline; }
         .logout-btn { transition: background 0.15s, border-color 0.15s, opacity 0.1s; }
         .logout-btn:hover { background: rgba(200, 194, 187, 0.14) !important; border-color: #b0aaa4 !important; }
         .logout-btn:active { opacity: 0.6; }
@@ -476,6 +491,7 @@ export default function HUL() {
               }
               setSessionToken('');
               setAuthed(false); setMessages([]); setQueryCount(0); setQueryLimit(50);
+              setSelectedStudy(''); setUsername(''); setPassword('');
             }}
             style={{
               background: 'none',
@@ -580,7 +596,7 @@ export default function HUL() {
           <div style={{ fontSize: 13, color: '#666' }}>
             You have <strong style={{ color: '#1c1c1c' }}>{queriesLeft} queries</strong> remaining on this study.
           </div>
-          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" style={{ fontSize: 12, fontWeight: 600, color: '#c0832e', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" className="upgrade-link" style={{ fontSize: 12, fontWeight: 600, color: '#c0832e', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Get unlimited access
           </a>
         </div>
@@ -592,7 +608,7 @@ export default function HUL() {
           <div style={{ fontSize: 13, color: '#666' }}>
             You have used all {queryLimit} queries on this study.
           </div>
-          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" style={{ fontSize: 13, fontWeight: 600, color: '#a63d2f', textDecoration: 'none' }}>
+          <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" className="upgrade-link" style={{ fontSize: 13, fontWeight: 600, color: '#a63d2f', textDecoration: 'none' }}>
             Contact Make Simple Labs to continue
           </a>
         </div>

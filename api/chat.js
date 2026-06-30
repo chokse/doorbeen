@@ -20,11 +20,49 @@ export default async function handler(req, res) {
     if (!sessions || sessions.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    await fetch(
+      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({ session_token: token, session_token_expires_at: expiresAt }),
+      }
+    );
     return res.status(200).json({
       queryCount: sessions[0].query_count,
       queryLimit: sessions[0].query_limit ?? 50,
       studyName: sessions[0].study_name,
+      sessionToken: token,
     });
+  }
+
+  if (req.method === 'DELETE') {
+    const { sessionToken } = req.body;
+    if (sessionToken) {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+      await fetch(
+        `${supabaseUrl}/rest/v1/research_sessions?session_token=eq.${encodeURIComponent(sessionToken)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({ session_token: null, session_token_expires_at: null }),
+        }
+      );
+    }
+    return res.status(200).json({ ok: true });
   }
 
   if (req.method !== 'POST') {
@@ -38,15 +76,14 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: 'API key not configured' });
   if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'Supabase not configured' });
 
-  const { username, password, study, messages, system, model, max_tokens } = req.body;
+  const { sessionToken, messages, system, model, max_tokens } = req.body;
 
-  if (!username) return res.status(400).json({ error: 'Username required' });
+  if (!sessionToken) return res.status(401).json({ error: 'No session token' });
 
   try {
-    // Fetch current query count
-    const encoded = study ? encodeURIComponent(study) : '';
+    // Fetch session by token
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count,query_limit`,
+      `${supabaseUrl}/rest/v1/research_sessions?session_token=eq.${encodeURIComponent(sessionToken)}&select=query_count,query_limit,session_token_expires_at`,
       {
         headers: {
           apikey: supabaseKey,
@@ -57,8 +94,9 @@ export default async function handler(req, res) {
     const sessions = await sessionRes.json();
     const session = sessions[0];
 
-    if (!session) {
-      return res.status(403).json({ error: 'Session not found' });
+    if (!session) return res.status(401).json({ error: 'Invalid session token' });
+    if (!session.session_token_expires_at || new Date(session.session_token_expires_at) < new Date()) {
+      return res.status(401).json({ error: 'Session expired' });
     }
 
     const queryLimit = session.query_limit ?? 50;
@@ -68,7 +106,7 @@ export default async function handler(req, res) {
 
     // Increment count
     await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}`,
+      `${supabaseUrl}/rest/v1/research_sessions?session_token=eq.${encodeURIComponent(sessionToken)}`,
       {
         method: 'PATCH',
         headers: {

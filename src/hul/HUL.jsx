@@ -94,6 +94,7 @@ export default function HUL() {
   const [loading, setLoading] = useState(false);
   const [queryCount, setQueryCount] = useState(0);
   const [queryLimit, setQueryLimit] = useState(50);
+  const [sessionToken, setSessionToken] = useState('');
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [copiedIdx, setCopiedIdx] = useState(null);
 
@@ -141,6 +142,38 @@ export default function HUL() {
     return () => clearTimeout(timer);
   }, [queriesLeft]);
 
+  // Restore session from sessionStorage on mount
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('hul_session') || 'null');
+      if (saved?.authed) {
+        setAuthed(true);
+        setSelectedStudy(saved.selectedStudy || '');
+        setUsername(saved.username || '');
+        setQueryCount(saved.queryCount || 0);
+        setQueryLimit(saved.queryLimit || 50);
+        setSessionToken(saved.sessionToken || '');
+        setMessages(saved.messages || []);
+      }
+    } catch {}
+  }, []);
+
+  // Persist session state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (!authed) return;
+    try {
+      sessionStorage.setItem('hul_session', JSON.stringify({
+        authed,
+        selectedStudy,
+        username,
+        sessionToken,
+        queryCount,
+        queryLimit,
+        messages,
+      }));
+    } catch {}
+  }, [authed, selectedStudy, username, queryCount, queryLimit, messages]);
+
   const handleLogin = async () => {
     if (!selectedStudy || !username || !password) {
       setAuthError('Please fill in all fields.');
@@ -161,6 +194,7 @@ export default function HUL() {
       }
       setQueryCount(data.queryCount);
       setQueryLimit(data.queryLimit ?? 50);
+      setSessionToken(data.sessionToken || '');
       setAuthed(true);
       setAuthError('');
     } catch {
@@ -183,9 +217,7 @@ export default function HUL() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username,
-          password,
-          study: selectedStudy,
+          sessionToken,
           model: 'claude-sonnet-4-6',
           max_tokens: 3000,
           system: SYSTEM_PROMPT,
@@ -381,6 +413,10 @@ export default function HUL() {
         .full-report-btn { transition: background 0.15s, opacity 0.1s; }
         .full-report-btn:hover { background: rgba(200, 194, 187, 0.08) !important; cursor: pointer; }
         .full-report-btn:active { opacity: 0.7; }
+        .chat-area::-webkit-scrollbar { width: 6px; }
+        .chat-area::-webkit-scrollbar-track { background: transparent; }
+        .chat-area::-webkit-scrollbar-thumb { background: #d5d0ca; border-radius: 3px; }
+        .chat-area::-webkit-scrollbar-thumb:hover { background: #b0aaa4; }
       `}</style>
 
       {/* Header */}
@@ -433,7 +469,14 @@ export default function HUL() {
           </span>
           <button
             className="logout-btn"
-            onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
+            onClick={() => {
+              sessionStorage.removeItem('hul_session');
+              if (sessionToken) {
+                fetch('/api/chat', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionToken }) }).catch(() => {});
+              }
+              setSessionToken('');
+              setAuthed(false); setMessages([]); setQueryCount(0); setQueryLimit(50);
+            }}
             style={{
               background: 'none',
               border: '1px solid #ccc7c0',

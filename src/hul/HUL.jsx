@@ -3,7 +3,6 @@ import { SYSTEM_PROMPT } from './studyContent.js';
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 const STUDIES = ['Peri/Menopause & Longevity'];
-const QUERY_LIMIT = 50;
 const UPGRADE_THRESHOLD = 45; // show soft nudge at this point
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -94,12 +93,13 @@ export default function HUL() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [queryCount, setQueryCount] = useState(0);
+  const [queryLimit, setQueryLimit] = useState(50);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  const queriesLeft = QUERY_LIMIT - queryCount;
+  const queriesLeft = queryLimit - queryCount;
   const [displayCount, setDisplayCount] = useState(queriesLeft);
   const [animating, setAnimating] = useState(false);
 
@@ -150,6 +150,7 @@ export default function HUL() {
         return;
       }
       setQueryCount(data.queryCount);
+      setQueryLimit(data.queryLimit ?? 50);
       setAuthed(true);
       setAuthError('');
     } catch {
@@ -160,7 +161,7 @@ export default function HUL() {
   const sendMessage = async (text) => {
     const q = text || input.trim();
     if (!q || loading) return;
-    if (queryCount >= QUERY_LIMIT) { setShowUpgrade(true); return; }
+    if (queryCount >= queryLimit) { setShowUpgrade(true); return; }
 
     setInput('');
     const newMessages = [...messages, { role: 'user', content: q }];
@@ -185,8 +186,10 @@ export default function HUL() {
       const data = await response.json();
       if (data.queryCount !== undefined) {
         setQueryCount(data.queryCount);
+        const effectiveLimit = data.queryLimit ?? queryLimit;
+        if (data.queryLimit !== undefined) setQueryLimit(data.queryLimit);
         if (data.queryCount >= UPGRADE_THRESHOLD) setShowUpgrade(true);
-        if (data.queryCount >= QUERY_LIMIT) setShowUpgrade(true);
+        if (data.queryCount >= effectiveLimit) setShowUpgrade(true);
       }
       const reply = data.content?.[0]?.text || 'Something went wrong. Please try again.';
       setMessages([...newMessages, { role: 'assistant', content: reply }]);
@@ -411,7 +414,7 @@ export default function HUL() {
             color: queriesLeft <= 10 ? '#a63d2f' : '#3d3a35',
             whiteSpace: 'nowrap',
           }}>
-            {queriesLeft} / {QUERY_LIMIT} queries remaining
+            {queriesLeft} / {queryLimit} queries remaining
           </span>
           <button
             onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
@@ -516,10 +519,10 @@ export default function HUL() {
       )}
 
       {/* Hard limit */}
-      {queryCount >= QUERY_LIMIT && (
+      {queryCount >= queryLimit && (
         <div className="upgrade-bar" style={{ background: '#fff0ee', borderTop: '1px solid #f0ccc8' }}>
           <div style={{ fontSize: 13, color: '#666' }}>
-            You have used all {QUERY_LIMIT} queries on this study.
+            You have used all {queryLimit} queries on this study.
           </div>
           <a href="mailto:hello@makesimple.in?subject=doorbeen%20Research%20Access" style={{ fontSize: 13, fontWeight: 600, color: '#a63d2f', textDecoration: 'none' }}>
             Contact Make Simple Labs to continue
@@ -536,14 +539,14 @@ export default function HUL() {
               ref={inputRef}
               className="chat-input"
               rows={1}
-              placeholder={queryCount >= QUERY_LIMIT ? 'Query limit reached' : 'Ask about the study...'}
+              placeholder={queryCount >= queryLimit ? 'Query limit reached' : 'Ask about the study...'}
               value={input}
               onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
               onKeyDown={handleKey}
-              disabled={queryCount >= QUERY_LIMIT}
+              disabled={queryCount >= queryLimit}
               style={{ height: 46 }}
             />
-            <button className="send-btn" onClick={() => sendMessage()} disabled={!input.trim() || loading || queryCount >= QUERY_LIMIT}>
+            <button className="send-btn" onClick={() => sendMessage()} disabled={!input.trim() || loading || queryCount >= queryLimit}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="22" y1="2" x2="11" y2="13"/>
                 <polygon points="22 2 15 22 11 13 2 9 22 2"/>

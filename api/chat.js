@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
     const encoded = encodeURIComponent(study);
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count,study_name`,
+      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count,query_limit,study_name`,
       {
         headers: {
           apikey: supabaseKey,
@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({
       queryCount: sessions[0].query_count,
+      queryLimit: sessions[0].query_limit ?? 50,
       studyName: sessions[0].study_name,
     });
   }
@@ -45,7 +46,7 @@ export default async function handler(req, res) {
     // Fetch current query count
     const encoded = study ? encodeURIComponent(study) : '';
     const sessionRes = await fetch(
-      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count`,
+      `${supabaseUrl}/rest/v1/research_sessions?username=eq.${username}&password=eq.${password}&study_name=eq.${encoded}&select=query_count,query_limit`,
       {
         headers: {
           apikey: supabaseKey,
@@ -60,7 +61,8 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Session not found' });
     }
 
-    if (session.query_count >= 50) {
+    const queryLimit = session.query_limit ?? 50;
+    if (session.query_count >= queryLimit) {
       return res.status(429).json({ error: 'Query limit reached' });
     }
 
@@ -95,7 +97,7 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const newCount = session.query_count + 1;
-    return res.status(response.status).json({ ...data, queryCount: newCount });
+    return res.status(response.status).json({ ...data, queryCount: newCount, queryLimit });
 
   } catch (err) {
     return res.status(500).json({ error: 'Server error' });

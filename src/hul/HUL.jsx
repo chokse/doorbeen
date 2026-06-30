@@ -95,9 +95,12 @@ export default function HUL() {
   const [queryCount, setQueryCount] = useState(0);
   const [queryLimit, setQueryLimit] = useState(50);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState(null);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const lastAiRef = useRef(null);
+  const prevLoadingRef = useRef(false);
 
   const queriesLeft = queryLimit - queryCount;
   const [displayCount, setDisplayCount] = useState(queriesLeft);
@@ -115,9 +118,16 @@ export default function HUL() {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-scroll
+  // Auto-scroll: on response completion scroll to TOP of new answer;
+  // on send scroll to bottom so the loading indicator is visible.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const justFinished = prevLoadingRef.current && !loading;
+    if (justFinished && lastAiRef.current) {
+      lastAiRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+    prevLoadingRef.current = loading;
   }, [messages, loading]);
 
   // Counter flip animation
@@ -344,7 +354,7 @@ export default function HUL() {
 
   // ── CHAT SCREEN ─────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: '#f8f6f2', display: 'flex', flexDirection: 'column', fontFamily: 'Poppins, sans-serif' }}>
+    <div style={{ height: '100vh', overflow: 'hidden', background: '#f8f6f2', display: 'flex', flexDirection: 'column', fontFamily: 'Poppins, sans-serif' }}>
       <style>{`
         * { box-sizing: border-box; }
         body { margin: 0; background: #f8f6f2; }
@@ -362,6 +372,11 @@ export default function HUL() {
         .dot:nth-child(3) { animation-delay: 0.3s; }
         @keyframes dotBounce { 0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
         .upgrade-bar { background: #fff8f0; border-top: 1px solid #f0e0cc; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+        .copy-btn { transition: color 0.15s, background 0.1s; border-radius: 4px; }
+        .copy-btn:hover { color: #c0832e !important; background: rgba(192, 131, 46, 0.06); }
+        .logout-btn { transition: background 0.15s, border-color 0.15s, opacity 0.1s; }
+        .logout-btn:hover { background: rgba(200, 194, 187, 0.14) !important; border-color: #b0aaa4 !important; }
+        .logout-btn:active { opacity: 0.6; }
         @media (max-width: 600px) { .msg-user, .msg-ai { max-width: 95%; } .chat-area { padding: 16px !important; } }
         .full-report-btn { transition: background 0.15s, opacity 0.1s; }
         .full-report-btn:hover { background: rgba(200, 194, 187, 0.08) !important; cursor: pointer; }
@@ -417,17 +432,17 @@ export default function HUL() {
             {queriesLeft} / {queryLimit} queries remaining
           </span>
           <button
+            className="logout-btn"
             onClick={() => { setAuthed(false); setMessages([]); setQueryCount(0); }}
             style={{
               background: 'none',
-              border: '1px solid #e8e4de',
+              border: '1px solid #ccc7c0',
               borderRadius: 6,
               padding: '6px 12px',
               fontSize: 11,
               fontFamily: 'Poppins, sans-serif',
-              color: '#c0bbb5',
+              color: '#8a8580',
               cursor: 'pointer',
-              opacity: 0.7,
             }}
           >
             Log out
@@ -457,9 +472,15 @@ export default function HUL() {
         )}
 
         {/* Messages */}
-        {messages.map((m, i) => (
+        {(() => {
+          const lastAiIdx = messages.reduce((acc, m, i) => m.role === 'assistant' ? i : acc, -1);
+          return messages.map((m, i) => (
           <React.Fragment key={i}>
-            <div className={m.role === 'user' ? 'msg-user' : 'msg-ai'} style={{ whiteSpace: 'pre-wrap' }}>
+            <div
+              ref={i === lastAiIdx ? lastAiRef : null}
+              className={m.role === 'user' ? 'msg-user' : 'msg-ai'}
+              style={{ whiteSpace: 'pre-wrap' }}
+            >
               <span dangerouslySetInnerHTML={{ __html: m.content
                 .replace(/^### (.*$)/gm, '<strong style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:1px;display:block;margin:16px 0 6px">$1</strong>')
                 .replace(/^## (.*$)/gm, '<strong style="font-size:15px;color:#1c1c1c;display:block;margin:18px 0 8px">$1</strong>')
@@ -473,7 +494,12 @@ export default function HUL() {
             </div>
             {m.role === 'assistant' && (
               <button
-                onClick={() => navigator.clipboard.writeText(m.content)}
+                className="copy-btn"
+                onClick={() => {
+                  navigator.clipboard.writeText(m.content);
+                  setCopiedIdx(i);
+                  setTimeout(() => setCopiedIdx(null), 1500);
+                }}
                 style={{
                   alignSelf: 'flex-start',
                   background: 'none',
@@ -481,18 +507,17 @@ export default function HUL() {
                   cursor: 'pointer',
                   padding: '4px 8px',
                   fontSize: 11,
-                  color: '#bbb',
+                  color: copiedIdx === i ? '#c0832e' : '#bbb',
                   fontFamily: 'Poppins, sans-serif',
                   marginTop: -8,
                 }}
-                onMouseEnter={e => e.target.style.color = '#c0832e'}
-                onMouseLeave={e => e.target.style.color = '#bbb'}
               >
-                Copy
+                {copiedIdx === i ? 'Copied ✓' : 'Copy'}
               </button>
             )}
           </React.Fragment>
-        ))}
+          ));
+        })()}
 
         {/* Loading */}
         {loading && (
